@@ -14,6 +14,7 @@ import {
   logHardwareEvent 
 } from '../services/hardwareCapabilities'
 import { enqueueScan, syncOfflineQueue, getOfflineQueue } from '../services/offlineSyncService'
+import { extractTagCode, decodeQRFromImage } from '../services/qrScannerService'
 
 export default function MobileSimulator({ 
   onAddScan, 
@@ -263,8 +264,8 @@ export default function MobileSimulator({
             try {
               const barcodes = await barcodeDetectorRef.current.detect(video)
               if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                const detectedPayload = barcodes[0].rawValue
-                if (detectedPayload !== lastScannedCode) {
+                const detectedPayload = extractTagCode(barcodes[0].rawValue)
+                if (detectedPayload && detectedPayload !== lastScannedCode) {
                   setLastScannedCode(detectedPayload)
                   playScanBeep()
                   handleScanTag(detectedPayload)
@@ -294,7 +295,7 @@ export default function MobileSimulator({
 
           if (!code) {
             const cropCanvas = document.createElement('canvas')
-            const cropSize = Math.min(vWidth, vHeight) * 0.6
+            const cropSize = Math.min(vWidth, vHeight) * 0.65
             const cropX = (vWidth - cropSize) / 2
             const cropY = (vHeight - cropSize) / 2
             cropCanvas.width = 480
@@ -307,11 +308,14 @@ export default function MobileSimulator({
             })
           }
 
-          if (code && code.data && code.data !== lastScannedCode) {
-            setLastScannedCode(code.data)
-            playScanBeep()
-            handleScanTag(code.data)
-            return
+          if (code && code.data) {
+            const cleanCode = extractTagCode(code.data)
+            if (cleanCode && cleanCode !== lastScannedCode) {
+              setLastScannedCode(cleanCode)
+              playScanBeep()
+              handleScanTag(cleanCode)
+              return
+            }
           }
         } catch (err) {
           console.error('Frame decode error:', err)
@@ -436,10 +440,22 @@ export default function MobileSimulator({
 
   // Primary Checkpoint Tag Scan Workflow
   const handleScanTag = async (tagCode, photoEvidence = null) => {
-    const cleanCode = tagCode.startsWith('PATROLIQ:') ? tagCode.substring(9).trim() : tagCode.trim()
+    const cleanCode = extractTagCode(tagCode)
 
-    // 1. Lookup Checkpoint in database
-    const matchedCp = checkpoints ? checkpoints.find(c => c.tag_code.toUpperCase() === cleanCode.toUpperCase()) : null
+    // 1. Lookup Checkpoint in database / checkpoints list
+    let matchedCp = checkpoints ? checkpoints.find(c => c.tag_code.toUpperCase() === cleanCode.toUpperCase()) : null
+
+    // Fallback: search by id, name, or substring matching
+    if (!matchedCp && checkpoints && checkpoints.length > 0) {
+      matchedCp = checkpoints.find(c => 
+        c.id.toUpperCase() === cleanCode.toUpperCase() ||
+        c.name.toUpperCase() === cleanCode.toUpperCase() ||
+        cleanCode.toUpperCase().includes(c.tag_code.toUpperCase()) ||
+        c.tag_code.toUpperCase().includes(cleanCode.toUpperCase())
+      )
+    }
+
+    const displayTagCode = matchedCp ? matchedCp.tag_code : cleanCode
 
     // 2. Fetch High-Accuracy GPS Position & Calculate Geofence
     let latitude = -12.9841
@@ -474,14 +490,14 @@ export default function MobileSimulator({
       withinGeofence = false
     }
 
-    const checkpointName = matchedCp ? matchedCp.name : `Checkpoint (${cleanCode})`
+    const checkpointName = matchedCp ? matchedCp.name : `Checkpoint (${displayTagCode})`
 
     if (photoEvidence) {
       setPhoto(photoEvidence)
     }
 
     setScannedTag({
-      code: cleanCode,
+      code: displayTagCode,
       name: checkpointName,
       checkpoint_id: matchedCp ? matchedCp.id : null,
       radius: allowedRadius,
@@ -530,64 +546,7 @@ export default function MobileSimulator({
             return
           }
 
-          let decodedCode = null
-
-          // STAGE 1: Try Native Android Chrome BarcodeDetector on raw photo
-          if ('BarcodeDetector' in window) {
-            try {
-              const detector = new window.BarcodeDetector({ formats: ['qr_code'] })
-              const barcodes = await detector.detect(img)
-              if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-                decodedCode = barcodes[0].rawValue
-              }
-            } catch (err) {
-              console.log('Native photo BarcodeDetector check note:', err)
-            }
-          }
-
-          // STAGE 2: Try Center-Crop 60% high-resolution scan with jsQR
-          if (!decodedCode) {
-            try {
-              const canvas = document.createElement('canvas')
-              const cropSize = Math.min(img.width, img.height) * 0.7
-              const cropX = (img.width - cropSize) / 2
-              const cropY = (img.height - cropSize) / 2
-              canvas.width = 640
-              canvas.height = 640
-              const ctx = canvas.getContext('2d')
-              ctx.drawImage(img, cropX, cropY, cropSize, cropSize, 0, 0, 640, 640)
-              const imageData = ctx.getImageData(0, 0, 640, 640)
-              const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' })
-              if (code && code.data) decodedCode = code.data
-            } catch (err) {}
-          }
-
-          // STAGE 3: Multi-Scale Resized jsQR Scans
-          if (!decodedCode) {
-            const scanScales = [1200, 800, 480]
-            const canvas = document.createElement('canvas')
-            const ctx = canvas.getContext('2d')
-            for (const targetSize of scanScales) {
-              try {
-                let w = img.width
-                let h = img.height
-                if (w > h) {
-                  if (w > targetSize) { h *= targetSize / w; w = targetSize; }
-                } else {
-                  if (h > targetSize) { w *= targetSize / h; h = targetSize; }
-                }
-                canvas.width = w
-                canvas.height = h
-                ctx.drawImage(img, 0, 0, w, h)
-                const imageData = ctx.getImageData(0, 0, w, h)
-                const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'attemptBoth' })
-                if (code && code.data) {
-                  decodedCode = code.data
-                  break
-                }
-              } catch (err) {}
-            }
-          }
+          let decodedCode = await decodeQRFromImage(img)
 
           // PROCESS RESULTS:
           if (decodedCode) {

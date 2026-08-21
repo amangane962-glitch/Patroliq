@@ -12,6 +12,7 @@ import DeviceCapabilityScreen from './components/DeviceCapabilityScreen'
 import KPITracking from './components/KPITracking'
 import Incidents from './components/Incidents'
 import AuditTrail from './components/AuditTrail'
+import { extractTagCode } from './services/qrScannerService'
 
 const DEFAULT_CHECKPOINTS = [
   { id: 'c1', name: 'North Gate Perimeter', tag_code: 'QR-N483', site: 'Main Mining Depot', route: 'Perimeter West A', latitude: -12.9841, longitude: 28.6412, geofence_radius_meters: 15.0 },
@@ -217,7 +218,8 @@ export default function App() {
     const connectMode = params.get('connect')
     
     if (scanCode) {
-      setInitialScanCode(scanCode)
+      const clean = extractTagCode(scanCode)
+      setInitialScanCode(clean)
       setActiveTab('simulator')
       setActiveShiftSite('Main Mining Depot')
     } else if (connectMode) {
