@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
-import { FileText, Star, ShieldAlert, CheckCircle, Clock, Printer, Save, Calendar, User, Camera, Volume2, ArrowRight } from 'lucide-react'
+import { FileText, Star, ShieldAlert, CheckCircle, Clock, Printer, Save, Calendar, User, Camera, Volume2, ArrowRight, Download } from 'lucide-react'
 
 export default function ShiftReports({ sharedShifts, setSharedShifts, sharedScans }) {
   const [shifts, setShifts] = useState(sharedShifts)
@@ -10,6 +10,29 @@ export default function ShiftReports({ sharedShifts, setSharedShifts, sharedScan
   const [reportForm, setReportForm] = useState({ summary_notes: '', rating: 5 })
   const [isLoading, setIsLoading] = useState(false)
   const [previewImage, setPreviewImage] = useState(null)
+
+  const exportShiftsCSV = () => {
+    const headers = ['Shift ID', 'Guard Name', 'Site Name', 'Started At', 'Ended At', 'Total Scans', 'Breaches', 'Rating', 'Supervisor Notes']
+    const rows = shifts.map(s => [
+      s.id,
+      `"${(s.guard_name || '').replace(/"/g, '""')}"`,
+      `"${(s.site_name || '').replace(/"/g, '""')}"`,
+      s.started_at || '',
+      s.ended_at || '',
+      s.total_scans || 0,
+      s.breaches || 0,
+      s.report?.rating || 'N/A',
+      `"${(s.report?.summary_notes || s.guard_notes || '').replace(/"/g, '""')}"`
+    ])
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `PatrolIQ_Shift_Report_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   useEffect(() => {
     if (sharedShifts) {
@@ -242,7 +265,15 @@ export default function ShiftReports({ sharedShifts, setSharedShifts, sharedScan
       {/* Header */}
       <header className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-[#12181A]/50 print:hidden">
         <h2 className="font-heading text-lg font-bold text-white">Management Shift Review Center</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportShiftsCSV}
+            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Export All Shift Reports CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-[#3DDCC5]" />
+            <span>Export All CSV</span>
+          </button>
           <span className="text-[10px] bg-white/5 text-white/40 px-2 py-0.5 rounded font-mono">
             COMPLETED PATROLS
           </span>

@@ -1,11 +1,34 @@
 import React, { useState } from 'react'
-import { ShieldAlert, AlertTriangle, CheckCircle, Clock, Search, Filter, Camera, Mic, MapPin, User, ChevronRight, Check } from 'lucide-react'
+import { ShieldAlert, AlertTriangle, CheckCircle, Clock, Search, Filter, Camera, Mic, MapPin, User, ChevronRight, Check, Download } from 'lucide-react'
 
 export default function Incidents({ sharedIncidents, setSharedIncidents }) {
   const [search, setSearch] = useState('')
   const [severityFilter, setSeverityFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
   const [selectedIncident, setSelectedIncident] = useState(null)
+
+  const exportIncidentsCSV = () => {
+    const headers = ['Incident ID', 'Title', 'Site', 'Reported By', 'Category', 'Severity', 'Status', 'Reported At', 'Description']
+    const rows = filteredIncidents.map(inc => [
+      inc.id,
+      `"${(inc.title || '').replace(/"/g, '""')}"`,
+      `"${(inc.site || '').replace(/"/g, '""')}"`,
+      `"${(inc.reported_by || '').replace(/"/g, '""')}"`,
+      inc.category || '',
+      inc.severity || '',
+      inc.status || '',
+      inc.reported_at || '',
+      `"${(inc.description || '').replace(/"/g, '""')}"`
+    ])
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `PatrolIQ_Incidents_Report_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   const handleUpdateStatus = (incidentId, newStatus) => {
     setSharedIncidents(prev => prev.map(inc => {
@@ -67,6 +90,14 @@ export default function Incidents({ sharedIncidents, setSharedIncidents }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={exportIncidentsCSV}
+            className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Export Incidents Report CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-[#3DDCC5]" />
+            <span>Export CSV</span>
+          </button>
           <div className="px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono font-bold flex items-center gap-2">
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>OPEN INCIDENTS: {sharedIncidents.filter(i => i.status === 'open').length}</span>
