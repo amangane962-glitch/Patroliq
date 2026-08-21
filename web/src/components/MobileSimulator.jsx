@@ -159,50 +159,85 @@ export default function MobileSimulator({
     }
   }, [screen])
 
+  // Multi-Level Progressive Fallback Camera Stream Request
+  const requestCameraStream = async (targetDeviceId = null) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Camera API not supported or restricted by browser security policies.')
+    }
+
+    // Try 1: Exact target device ID if selected
+    if (targetDeviceId) {
+      try {
+        return await navigator.mediaDevices.getUserMedia({
+          video: { deviceId: { exact: targetDeviceId } }
+        })
+      } catch (e1) {
+        try {
+          return await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { ideal: targetDeviceId } }
+          })
+        } catch (e2) {}
+      }
+    }
+
+    // Try 2: Environment (Rear) Camera exact constraint
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: 'environment' } }
+      })
+    } catch (e1) {
+      // Try 3: Environment facingMode ideal / loose constraint
+      try {
+        return await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' }
+        })
+      } catch (e2) {
+        try {
+          return await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } }
+          })
+        } catch (e3) {
+          // Try 4: Universal video true fallback
+          return await navigator.mediaDevices.getUserMedia({ video: true })
+        }
+      }
+    }
+  }
+
+  // Explicit user-triggered camera start handler (bypasses browser autoplay restrictions)
+  const startCamera = async (targetDeviceId = selectedDeviceId) => {
+    setCameraError(null)
+    try {
+      const stream = await requestCameraStream(targetDeviceId)
+      setCameraStream(stream)
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play().catch(() => {})
+      }
+    } catch (err) {
+      console.error('Camera access failed:', err)
+      let errText = 'Camera permission denied or camera unavailable.'
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        errText = 'Camera permission blocked. Tap "ENABLE LIVE CAMERA" or use "TAKE PHOTO & SCAN QR" below.'
+      } else if (!capabilities.secureContext) {
+        errText = 'HTTP Browser Policy: Live camera is restricted over unencrypted HTTP Wi-Fi. Use "TAKE PHOTO & SCAN QR" snapshot mode.'
+      }
+      setCameraError(errText)
+      logHardwareEvent('CAMERA_PERMISSION_DENIED', errText, { name: err.name })
+    }
+  }
+
   // Camera Stream Lifecycle: Start stream on scanner screen open, stop all tracks on exit/background
   useEffect(() => {
     let activeStream = null
 
-    const startCamera = async () => {
-      if (screen === 'scan' && qrEnabled) {
-        setCameraError(null)
-        
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-          const errMsg = !capabilities.secureContext
-            ? 'Insecure Context (HTTP): Live camera stream restricted over Wi-Fi. Use "TAKE PHOTO & SCAN QR" button below!'
-            : 'Camera API not supported by this browser.'
-          setCameraError(errMsg)
-          logHardwareEvent('CAMERA_NOT_SUPPORTED', errMsg)
-          return
-        }
-
-        try {
-          const videoConstraints = selectedDeviceId
-            ? { deviceId: { ideal: selectedDeviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
-            : { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-
-          const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints })
-          activeStream = stream
-          setCameraStream(stream)
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream
-          }
-        } catch (err) {
-          console.error('Camera access failed:', err)
-          const errText = err.name === 'NotAllowedError' 
-            ? 'Camera permission denied by user. Tap "TAKE PHOTO & SCAN QR" below to take snapshot!' 
-            : 'Camera stream unavailable over HTTP. Use "TAKE PHOTO & SCAN QR" snapshot mode!'
-          setCameraError(errText)
-          logHardwareEvent('CAMERA_PERMISSION_DENIED', errText, { name: err.name })
-        }
-      }
+    if (screen === 'scan' && qrEnabled) {
+      startCamera()
     }
 
-    startCamera()
-
     const handleVisibilityChange = () => {
-      if (document.hidden && activeStream) {
-        activeStream.getTracks().forEach(track => track.stop())
+      if (document.hidden && cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop())
         setCameraStream(null)
       } else if (!document.hidden && screen === 'scan' && qrEnabled) {
         startCamera()
@@ -213,33 +248,27 @@ export default function MobileSimulator({
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      if (activeStream) {
-        activeStream.getTracks().forEach(track => track.stop())
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop())
       }
       setCameraStream(null)
     }
-  }, [screen, qrEnabled, selectedDeviceId, capabilities.secureContext])
+  }, [screen, qrEnabled, selectedDeviceId])
 
-  // Bind camera stream to video element and play it
+  // Bind camera stream to video element and handle iOS Safari metadata load
   useEffect(() => {
-    let playTimeout = null
     if (videoRef.current && cameraStream) {
       try {
         videoRef.current.srcObject = cameraStream
-        videoRef.current.play().catch(err => {
-          console.log('Video auto-play retry:', err)
-        })
-        playTimeout = setTimeout(() => {
+        videoRef.current.onloadedmetadata = () => {
           if (videoRef.current) {
             videoRef.current.play().catch(() => {})
           }
-        }, 300)
+        }
+        videoRef.current.play().catch(() => {})
       } catch (err) {
         console.error('Failed to set video srcObject:', err)
       }
-    }
-    return () => {
-      if (playTimeout) clearTimeout(playTimeout)
     }
   }, [cameraStream, screen])
 
@@ -1018,15 +1047,7 @@ export default function MobileSimulator({
                   {qrEnabled ? (
                     <div className="w-full flex flex-col items-center justify-center relative gap-2">
                       <div className="w-56 h-56 border-2 border-[#3DDCC5] rounded-3xl flex flex-col items-center justify-center relative overflow-hidden bg-black shadow-2xl">
-                        {cameraError ? (
-                          <div className="flex flex-col items-center justify-center text-center gap-2 text-white/90 p-3">
-                            <AlertTriangle className="w-6 h-6 text-amber-400 shrink-0" />
-                            <span className="text-[10px] font-bold text-white leading-snug">HTTP CAMERA RESTRICTION</span>
-                            <span className="text-[8px] text-white/60 font-mono leading-tight px-1">
-                              Mobile OS restricts live video stream over unencrypted HTTP Wi-Fi. Use the photo snapshot button below!
-                            </span>
-                          </div>
-                        ) : (
+                        {cameraStream ? (
                           <video
                             ref={videoRef}
                             autoPlay
@@ -1034,41 +1055,62 @@ export default function MobileSimulator({
                             muted
                             className="w-full h-full object-cover absolute inset-0"
                           />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-center gap-2 text-white/90 p-4 z-20">
+                            <Camera className="w-8 h-8 text-[#3DDCC5] animate-bounce" />
+                            <span className="text-xs font-bold text-white leading-snug">LIVE CAMERA INACTIVE</span>
+                            {cameraError && (
+                              <span className="text-[9px] text-amber-300 font-mono leading-tight px-1">
+                                {cameraError}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => startCamera()}
+                              className="mt-1 px-4 py-2 bg-[#3DDCC5] text-black font-extrabold text-xs rounded-xl shadow hover:bg-[#3DDCC5]/90 transition"
+                            >
+                              ENABLE LIVE CAMERA
+                            </button>
+                          </div>
                         )}
                         
                         {/* Animated Laser Scanning Line */}
-                        <div className="absolute w-48 h-48 border border-dashed border-[#3DDCC5]/50 rounded-2xl pointer-events-none z-10">
-                          <div className="w-full h-0.5 bg-[#3DDCC5] shadow-[0_0_8px_#3DDCC5] absolute top-1/2 -translate-y-1/2 animate-pulse" />
-                        </div>
+                        {cameraStream && (
+                          <div className="absolute w-48 h-48 border border-dashed border-[#3DDCC5]/50 rounded-2xl pointer-events-none z-10">
+                            <div className="w-full h-0.5 bg-[#3DDCC5] shadow-[0_0_8px_#3DDCC5] absolute top-1/2 -translate-y-1/2 animate-pulse" />
+                          </div>
+                        )}
                       </div>
 
-                      {/* Primary Snapshot Scan Button (Always accessible for mobile HTTP) */}
-                      <button 
-                        type="button"
-                        onClick={triggerCamera}
-                        className="w-full py-3 bg-[#3DDCC5] text-black text-xs font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-[#3DDCC5]/20 hover:bg-[#3DDCC5]/90 transition transform hover:scale-[1.01]"
-                      >
-                        <Camera className="w-4 h-4" />
-                        TAKE PHOTO & SCAN QR
-                      </button>
+                      {/* Primary Snapshot Scan Button & Flip Camera */}
+                      <div className="w-full flex gap-2">
+                        <button 
+                          type="button"
+                          onClick={triggerCamera}
+                          className="flex-1 py-3 bg-[#3DDCC5] text-black text-xs font-extrabold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-[#3DDCC5]/20 hover:bg-[#3DDCC5]/90 transition transform hover:scale-[1.01]"
+                        >
+                          <Camera className="w-4 h-4" />
+                          TAKE PHOTO & SCAN QR
+                        </button>
 
-                      {/* Active Camera Device Selector */}
-                      {qrEnabled && !cameraError && videoDevices.length > 1 && (
-                        <div className="flex flex-col gap-1 items-center mt-1 w-full max-w-[220px]">
-                          <span className="text-[8px] text-white/40 font-mono uppercase">SWITCH CAMERA INPUT:</span>
-                          <select
-                            value={selectedDeviceId}
-                            onChange={e => setSelectedDeviceId(e.target.value)}
-                            className="w-full bg-[#12181A] border border-white/10 rounded-xl px-2.5 py-1 text-[10px] text-white font-mono focus:outline-none focus:border-[#3DDCC5] cursor-pointer"
+                        {videoDevices.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentIndex = videoDevices.findIndex(d => d.deviceId === selectedDeviceId)
+                              const nextIndex = (currentIndex + 1) % videoDevices.length
+                              const nextDeviceId = videoDevices[nextIndex].deviceId
+                              setSelectedDeviceId(nextDeviceId)
+                              startCamera(nextDeviceId)
+                            }}
+                            className="px-3 py-3 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-xl font-mono text-xs flex items-center justify-center gap-1"
+                            title="Flip Camera"
                           >
-                            {videoDevices.map((device, idx) => (
-                              <option key={device.deviceId} value={device.deviceId}>
-                                {device.label || `Camera ${idx + 1}`}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                            <RefreshCw className="w-4 h-4 text-[#3DDCC5]" />
+                            FLIP
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ) : (
                     <div className="w-52 h-52 border border-white/10 rounded-2xl flex items-center justify-center bg-black/50 text-white/30 text-center p-4">
