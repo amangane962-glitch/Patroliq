@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PatrolIQ</string>
+    <string name="title_activity_main">PatrolIQ</string>
+    <string name="package_name">com.patroliq.app</string>
+    <string name="custom_url_scheme">com.patroliq.app</string>
+</resources>

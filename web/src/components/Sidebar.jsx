@@ -1,4 +1,4 @@
-import { Activity, Map, MapPin, List, Users, Shield, FileText, Smartphone, X, Award, ShieldAlert, FileCheck, Cpu } from 'lucide-react'
+import { Activity, Map, MapPin, List, Users, Shield, FileText, Smartphone, X, Award, ShieldAlert, FileCheck, Cpu, Download } from 'lucide-react'
 
 export default function Sidebar({ activeTab, setActiveTab, onCloseMobile }) {
   const menuItems = [
@@ -38,7 +38,7 @@ export default function Sidebar({ activeTab, setActiveTab, onCloseMobile }) {
         </div>
 
         {/* Navigation Items */}
-        <nav className="p-4 flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-140px)]">
+        <nav className="p-4 flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-200px)]">
           {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = activeTab === item.id
@@ -63,14 +63,25 @@ export default function Sidebar({ activeTab, setActiveTab, onCloseMobile }) {
         </nav>
       </div>
 
-      {/* User Info footer */}
-      <div className="p-4 border-t border-white/5 bg-black/10 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-[#3DDCC5]/10 border border-[#3DDCC5]/20 flex items-center justify-center">
-          <span className="text-xs font-semibold text-[#3DDCC5] font-mono font-bold">AD</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-xs font-medium text-white">Security Command</span>
-          <span className="text-[10px] text-white/40 font-mono">ROLE: ADMIN</span>
+      {/* Footer: APK Download & User Info */}
+      <div className="p-4 border-t border-white/5 bg-black/10 flex flex-col gap-3">
+        <a
+          href="/PatrolIQ.apk"
+          download="PatrolIQ-Security-App.apk"
+          className="w-full py-2 px-3 bg-[#3DDCC5]/20 hover:bg-[#3DDCC5]/30 border border-[#3DDCC5]/30 text-[#3DDCC5] font-bold rounded-lg text-xs font-mono flex items-center justify-center gap-2 transition shadow"
+        >
+          <Download className="w-4 h-4" />
+          <span>DOWNLOAD APK</span>
+        </a>
+
+        <div className="flex items-center gap-3 pt-1">
+          <div className="w-8 h-8 rounded-full bg-[#3DDCC5]/10 border border-[#3DDCC5]/20 flex items-center justify-center">
+            <span className="text-xs font-semibold text-[#3DDCC5] font-mono font-bold">AD</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-medium text-white">Security Command</span>
+            <span className="text-[10px] text-white/40 font-mono">ROLE: ADMIN</span>
+          </div>
         </div>
       </div>
     </aside>
