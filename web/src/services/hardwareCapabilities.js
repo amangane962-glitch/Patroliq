@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { Geolocation as CapGeolocation } from '@capacitor/geolocation'
 
 // Hardware Error Log Store
 let hardwareLogs = []
@@ -48,76 +49,71 @@ export async function detectCapabilities() {
   // 1. Camera & QR Scanner Capability Detection
   let hasCamera = false
   let cameraPermission = 'prompt' // 'granted' | 'denied' | 'prompt' | 'unsupported'
-  let videoDevices = []
 
-  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    hasCamera = true
+  if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
     try {
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoInputDevices = devices.filter(device => device.kind === 'videoinput')
+      hasCamera = videoInputDevices.length > 0
+
       if (navigator.permissions && navigator.permissions.query) {
-        const camPerm = await navigator.permissions.query({ name: 'camera' }).catch(() => null)
-        if (camPerm) cameraPermission = camPerm.state
+        try {
+          const status = await navigator.permissions.query({ name: 'camera' })
+          cameraPermission = status.state
+        } catch (e) {
+          cameraPermission = hasCamera ? 'prompt' : 'unsupported'
+        }
+      } else {
+        cameraPermission = hasCamera ? 'prompt' : 'unsupported'
       }
-    } catch (e) {}
-
-    try {
-      if (navigator.mediaDevices.enumerateDevices) {
-        const devices = await navigator.mediaDevices.enumerateDevices()
-        videoDevices = devices.filter(d => d.kind === 'videoinput')
-      }
-    } catch (e) {}
-  } else {
-    cameraPermission = 'unsupported'
-    logHardwareEvent('CAMERA_NOT_SUPPORTED', 'MediaDevices getUserMedia not supported by browser/context')
+    } catch (err) {
+      logHardwareEvent('CAMERA_ENUMERATE_ERROR', 'Could not enumerate media devices: ' + err.message)
+    }
   }
 
-  // 2. GPS & Location Source Detection
-  let hasGpsApi = 'geolocation' in navigator
+  // 2. High Accuracy GPS Detection
+  let hasGps = 'geolocation' in navigator || (window.Capacitor && true)
   let locationPermission = 'prompt'
-  let locationSource = 'Unknown' // 'GPS Hardware' | 'Browser / Network' | 'Unavailable'
+  let locationSource = 'HTML5 Geolocation'
 
-  if (hasGpsApi) {
+  if (window.Capacitor) {
+    locationSource = 'Native Android Fused GPS'
+  }
+
+  if (navigator.permissions && navigator.permissions.query) {
     try {
-      if (navigator.permissions && navigator.permissions.query) {
-        const geoPerm = await navigator.permissions.query({ name: 'geolocation' }).catch(() => null)
-        if (geoPerm) locationPermission = geoPerm.state
-      }
-    } catch (e) {}
-
-    // Distinguish real GPS hardware vs Laptop / Browser network positioning
-    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    if (isMobileDevice) {
-      locationSource = 'GPS Hardware'
-    } else {
-      locationSource = 'Browser / Network'
+      const status = await navigator.permissions.query({ name: 'geolocation' })
+      locationPermission = status.state
+    } catch (e) {
+      locationPermission = hasGps ? 'prompt' : 'unsupported'
     }
-  } else {
-    locationPermission = 'unsupported'
-    locationSource = 'Unavailable'
-    logHardwareEvent('GPS_NOT_SUPPORTED', 'Browser does not support Geolocation API')
   }
 
   // 3. Web NFC Capability Detection
   let hasNfc = 'NDEFReader' in window
   let nfcPermission = hasNfc ? 'prompt' : 'unsupported'
 
-  if (!hasNfc) {
-    logHardwareEvent('NFC_NOT_SUPPORTED', 'Web NFC API (NDEFReader) is not supported on this browser/device')
-  }
-
   // 4. Torch / Flashlight Detection
   let hasTorch = false
-  if (videoDevices.length > 0) {
-    // Torch requires an active track to inspect capabilities, default true if mobile camera present
-    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    hasTorch = isMobileDevice
+  if (hasCamera && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+      const track = stream.getVideoTracks()[0]
+      if (track) {
+        const capabilities = track.getCapabilities ? track.getCapabilities() : {}
+        hasTorch = Boolean(capabilities.torch)
+        stream.getTracks().forEach(t => t.stop())
+      }
+    } catch (e) {
+      // Ignored for capability check
+    }
   }
 
   return {
     camera: hasCamera,
     cameraPermission,
-    videoDevicesCount: videoDevices.length,
     qrScanner: hasCamera,
-    gps: hasGpsApi,
+    gps: hasGps,
     locationPermission,
     locationSource,
     nfc: hasNfc,
@@ -131,13 +127,12 @@ export async function detectCapabilities() {
 }
 
 /**
- * Custom React Hook for hardware capability management
+ * Custom React Hook to expose live hardware capabilities
  */
 export function useHardwareCapabilities() {
   const [capabilities, setCapabilities] = useState({
     camera: false,
     cameraPermission: 'prompt',
-    videoDevicesCount: 0,
     qrScanner: false,
     gps: false,
     locationPermission: 'prompt',
@@ -179,14 +174,30 @@ export function useHardwareCapabilities() {
 }
 
 /**
- * High Accuracy Geolocation Helper
+ * High Accuracy Geolocation Helper (Native Android + Web Fallback)
  */
-export function getHighAccuracyPosition(options = {}) {
+export async function getHighAccuracyPosition(options = {}) {
   const defaultOptions = {
     enableHighAccuracy: true,
     timeout: 10000,
     maximumAge: 5000,
     ...options
+  }
+
+  if (window.Capacitor && CapGeolocation) {
+    try {
+      const position = await CapGeolocation.getCurrentPosition(defaultOptions)
+      return {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: Math.round(position.coords.accuracy * 10) / 10,
+        timestamp: position.timestamp,
+        source: 'Native Android Fused GPS',
+        raw: position
+      }
+    } catch (err) {
+      logHardwareEvent('NATIVE_GPS_FALLBACK', 'Native GPS failed, falling back to Web Geolocation: ' + err.message)
+    }
   }
 
   return new Promise((resolve, reject) => {
