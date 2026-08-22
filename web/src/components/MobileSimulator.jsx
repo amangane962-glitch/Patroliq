@@ -6,6 +6,8 @@ import {
   HelpCircle, Settings, Info
 } from 'lucide-react'
 import jsQR from 'jsqr'
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
+import { Toast } from '@capacitor/toast'
 import DeviceCapabilityScreen from './DeviceCapabilityScreen'
 import { 
   useHardwareCapabilities, 
@@ -15,6 +17,23 @@ import {
 } from '../services/hardwareCapabilities'
 import { enqueueScan, syncOfflineQueue, getOfflineQueue } from '../services/offlineSyncService'
 import { extractTagCode, decodeQRFromImage } from '../services/qrScannerService'
+
+export const triggerNativeFeedback = async (type = 'success', message = '') => {
+  try {
+    if (window.Capacitor) {
+      if (type === 'success') {
+        await Haptics.notification({ type: NotificationType.Success })
+      } else {
+        await Haptics.impact({ style: ImpactStyle.Heavy })
+      }
+      if (message) {
+        await Toast.show({ text: message, duration: 'short' })
+      }
+    } else if ('vibrate' in navigator) {
+      navigator.vibrate(type === 'success' ? [100, 50, 100] : [200, 100, 200])
+    }
+  } catch (e) {}
+}
 
 export default function MobileSimulator({ 
   onAddScan, 
