@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
-import { Menu } from 'lucide-react'
+import { Menu, Activity, Map, MapPin, List, Smartphone, ShieldAlert } from 'lucide-react'
 import LiveOverview from './components/LiveOverview'
 import SitesAndRoutes from './components/SitesAndRoutes'
 import Checkpoints from './components/Checkpoints'
@@ -460,24 +460,93 @@ export default function App() {
         />
       )}
 
-      <div className="flex-grow flex flex-col overflow-hidden">
+      <div className="flex-grow flex flex-col overflow-hidden relative">
         {/* Mobile Header top bar */}
         <header className="h-14 border-b border-white/5 flex items-center px-4 bg-[#12181A] md:hidden shrink-0 justify-between">
-          <button 
-            onClick={() => setSidebarOpen(true)}
-            className="p-1.5 text-white hover:bg-white/5 rounded"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-          <span className="font-heading font-bold text-white tracking-wide">PatrolIQ</span>
-          <div className="w-8 h-8 rounded-full bg-[#3DDCC5]/10 border border-[#3DDCC5]/20 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-[#3DDCC5] font-mono">OP</span>
+          <div className="flex items-center gap-2.5">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="p-1.5 text-white hover:bg-white/5 rounded-lg border border-white/10"
+              title="Open Navigation Drawer"
+            >
+              <Menu className="w-5 h-5 text-[#3DDCC5]" />
+            </button>
+            <div className="flex flex-col">
+              <span className="font-heading font-bold text-white tracking-wide text-xs leading-none">PatrolIQ</span>
+              <span className="text-[9px] text-[#3DDCC5] font-mono font-bold uppercase mt-0.5">
+                {activeTab.toUpperCase()}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('simulator')}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold border transition ${
+                activeTab === 'simulator'
+                  ? 'bg-[#3DDCC5] text-black border-[#3DDCC5]'
+                  : 'bg-[#3DDCC5]/10 text-[#3DDCC5] border-[#3DDCC5]/30'
+              }`}
+            >
+              📱 GUARD APP
+            </button>
           </div>
         </header>
 
-        <div className="flex-grow overflow-hidden flex flex-col">
+        <div className="flex-grow overflow-hidden flex flex-col pb-16 md:pb-0">
           {renderContent()}
         </div>
+
+        {/* Mobile Tactical Bottom Navigation Bar */}
+        <nav className="fixed bottom-0 left-0 right-0 h-16 bg-[#12181A] border-t border-white/10 flex items-center justify-around z-30 md:hidden px-1 shadow-2xl">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg text-[10px] font-mono transition ${
+              activeTab === 'overview' ? 'text-[#3DDCC5] font-bold' : 'text-white/50'
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            <span>Overview</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('sites')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg text-[10px] font-mono transition ${
+              activeTab === 'sites' ? 'text-[#3DDCC5] font-bold' : 'text-white/50'
+            }`}
+          >
+            <Map className="w-4 h-4" />
+            <span>Sites</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('simulator')}
+            className={`flex flex-col items-center justify-center p-3 rounded-full bg-[#3DDCC5] text-black shadow-lg shadow-[#3DDCC5]/30 -mt-6 border-2 border-[#12181A] transform active:scale-95 transition`}
+            title="Open Guard Scanner App"
+          >
+            <Smartphone className="w-5 h-5 fill-current" />
+          </button>
+
+          <button
+            onClick={() => setActiveTab('checkpoints')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg text-[10px] font-mono transition ${
+              activeTab === 'checkpoints' ? 'text-[#3DDCC5] font-bold' : 'text-white/50'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            <span>Codes</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('log')}
+            className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg text-[10px] font-mono transition ${
+              activeTab === 'log' ? 'text-[#3DDCC5] font-bold' : 'text-white/50'
+            }`}
+          >
+            <List className="w-4 h-4" />
+            <span>Logs</span>
+          </button>
+        </nav>
       </div>
     </div>
   )
