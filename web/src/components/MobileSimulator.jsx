@@ -39,10 +39,13 @@ export default function MobileSimulator({
   const [gpsEnabled, setGpsEnabled] = useState(true)
   const [nfcEnabled, setNfcEnabled] = useState(true)
   const [qrEnabled, setQrEnabled] = useState(true)
+  const [rfidEnabled, setRfidEnabled] = useState(true)
   const [torchOn, setTorchOn] = useState(false)
 
-  // NFC scanning state
+  // NFC & RFID scanning state
   const [nfcStatus, setNfcStatus] = useState('idle')
+  const [showRfidModal, setShowRfidModal] = useState(false)
+  const [customRfidInput, setCustomRfidInput] = useState('')
 
   // Form values
   const [notes, setNotes] = useState('')
@@ -51,6 +54,15 @@ export default function MobileSimulator({
   const [isRecording, setIsRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const recordingTimer = useRef(null)
+
+  // 30-Second Security Video Evidence State
+  const [videoNote, setVideoNote] = useState(null)
+  const [isVideoRecording, setIsVideoRecording] = useState(false)
+  const [videoSeconds, setVideoSeconds] = useState(0)
+  const videoTimerRef = useRef(null)
+  const videoMediaRecorderRef = useRef(null)
+  const videoChunksRef = useRef([])
+  const videoInputRef = useRef(null)
 
   // Handover form values
   const [handoverNotes, setHandoverNotes] = useState('')
@@ -657,6 +669,84 @@ export default function MobileSimulator({
     }
   }
 
+  // 30-Second Security Video Recording (HTML5 MediaRecorder + 30s Countdown Limit)
+  const start30sVideoRecording = async () => {
+    try {
+      let stream = cameraStream
+      if (!stream) {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      }
+      
+      const mediaRecorder = new MediaRecorder(stream)
+      videoMediaRecorderRef.current = mediaRecorder
+      videoChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          videoChunksRef.current.push(e.data)
+        }
+      }
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(videoChunksRef.current, { type: 'video/mp4' })
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setVideoNote(reader.result)
+        }
+        reader.readAsDataURL(blob)
+        setIsVideoRecording(false)
+        setVideoSeconds(0)
+        if (videoTimerRef.current) clearInterval(videoTimerRef.current)
+      }
+
+      mediaRecorder.start(200)
+      setIsVideoRecording(true)
+      setVideoSeconds(30)
+
+      videoTimerRef.current = setInterval(() => {
+        setVideoSeconds(prev => {
+          if (prev <= 1) {
+            clearInterval(videoTimerRef.current)
+            if (videoMediaRecorderRef.current && videoMediaRecorderRef.current.state === 'recording') {
+              videoMediaRecorderRef.current.stop()
+            }
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+
+    } catch (err) {
+      alert('Could not access camera/mic for 30s video recording. You can also use the video file upload button!')
+    }
+  }
+
+  const stop30sVideoRecording = () => {
+    if (videoMediaRecorderRef.current && videoMediaRecorderRef.current.state === 'recording') {
+      videoMediaRecorderRef.current.stop()
+    }
+    if (videoTimerRef.current) clearInterval(videoTimerRef.current)
+    setIsVideoRecording(false)
+  }
+
+  const handleVideoFileCapture = (e) => {
+    const file = e.target.files && e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setVideoNote(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleRfidCardTap = (cardUid) => {
+    setShowRfidModal(false)
+    playScanBeep()
+    const clean = extractTagCode(cardUid)
+    handleScanTag(clean)
+  }
+
   // Submit scan report with Offline-First Queue Manager
   const handleSubmitReport = () => {
     if (!scannedTag) return
@@ -676,6 +766,7 @@ export default function MobileSimulator({
       notes: notes + (!gpsEnabled ? ' (GPS disabled)' : ''),
       photo_url: photo,
       voice_note_url: voiceNote,
+      video_url: videoNote,
       officer_name: activeOfficer.name
     }
 
@@ -689,6 +780,7 @@ export default function MobileSimulator({
     setNotes('')
     setPhoto(null)
     setVoiceNote(null)
+    setVideoNote(null)
     setScannedTag(null)
     setLastScannedCode(null)
     setScreen('dashboard')
@@ -886,6 +978,20 @@ export default function MobileSimulator({
                     </div>
                     <button onClick={() => setNfcEnabled(!nfcEnabled)}>
                       {nfcEnabled ? <ToggleRight className="w-6 h-6 text-[#3DDCC5]" /> : <ToggleLeft className="w-6 h-6 text-white/20" />}
+                    </button>
+                  </div>
+
+                  {/* RFID */}
+                  <div className="flex items-center justify-between py-0.5">
+                    <div className="flex items-center gap-2">
+                      <Radio className={`w-4 h-4 ${rfidEnabled ? 'text-[#3DDCC5]' : 'text-white/20'}`} />
+                      <div className="flex flex-col">
+                        <span className={rfidEnabled ? 'text-white/90 font-medium text-[11px]' : 'text-white/30 text-[11px]'}>RFID Tag Reader</span>
+                        <span className="text-[9px] text-white/40 font-mono">USB / Bluetooth / 13.56MHz</span>
+                      </div>
+                    </div>
+                    <button onClick={() => setRfidEnabled(!rfidEnabled)}>
+                      {rfidEnabled ? <ToggleRight className="w-6 h-6 text-[#3DDCC5]" /> : <ToggleLeft className="w-6 h-6 text-white/20" />}
                     </button>
                   </div>
 
@@ -1126,16 +1232,85 @@ export default function MobileSimulator({
                           type="button"
                           onClick={handleStartNfcScan}
                           disabled={nfcStatus === 'scanning'}
-                          className="w-full py-2.5 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 font-bold rounded-xl flex items-center justify-center gap-2 text-xs transition"
+                          className="w-full py-2.5 bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 font-bold rounded-xl flex items-center justify-center gap-2 text-xs transition cursor-pointer"
                         >
                           <Radio className={`w-4 h-4 text-indigo-400 ${nfcStatus === 'scanning' ? 'animate-pulse' : ''}`} />
                           {nfcStatus === 'scanning' ? 'Hold Tag to NFC Sensor...' : '[ USE NFC TAG READER ]'}
                         </button>
                       ) : (
                         <div className="p-2 rounded-xl bg-white/5 border border-white/10 text-[9px] text-white/40 font-mono text-center">
-                          NFC not supported on this device/browser (Use QR or Manual entry)
+                          NFC Reader Enabled (Touch card to phone or use RFID)
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* RFID Scanner Button */}
+                  {rfidEnabled && (
+                    <div className="w-full mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowRfidModal(true)}
+                        className="w-full py-2.5 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-200 font-bold rounded-xl flex items-center justify-center gap-2 text-xs transition cursor-pointer"
+                      >
+                        <Radio className="w-4 h-4 text-purple-400 animate-pulse" />
+                        [ TAP RFID BADGE / SENSOR ]
+                      </button>
+                    </div>
+                  )}
+
+                  {/* RFID SENSOR TAP MODAL */}
+                  {showRfidModal && (
+                    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+                      <div className="bg-[#12181A] border border-purple-500/30 rounded-2xl p-5 w-full max-w-xs flex flex-col gap-4 text-center">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                          <span className="text-xs font-bold text-purple-300 font-mono flex items-center gap-1.5">
+                            <Radio className="w-4 h-4 text-purple-400" /> RFID SENSOR ACTIVE
+                          </span>
+                          <button onClick={() => setShowRfidModal(false)} className="text-white/40 hover:text-white">✕</button>
+                        </div>
+
+                        <div className="w-20 h-20 mx-auto rounded-full bg-purple-500/10 border-2 border-dashed border-purple-400 flex items-center justify-center animate-pulse">
+                          <Radio className="w-8 h-8 text-purple-400" />
+                        </div>
+                        
+                        <p className="text-[10px] text-white/60 font-mono">
+                          Hold your 13.56MHz RFID Badge, FOB or Keycard near the sensor or select a registered tag below:
+                        </p>
+
+                        <div className="flex flex-col gap-1.5">
+                          {checkpoints && checkpoints.slice(0, 4).map(cp => (
+                            <button
+                              key={cp.id}
+                              type="button"
+                              onClick={() => handleRfidCardTap(cp.tag_code)}
+                              className="w-full py-2 px-3 bg-white/5 hover:bg-purple-500/20 border border-white/10 hover:border-purple-500/40 text-white rounded-lg text-xs font-mono flex items-center justify-between transition"
+                            >
+                              <span>{cp.name}</span>
+                              <span className="text-purple-300 font-bold text-[10px]">{cp.tag_code}</span>
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="flex gap-2 mt-1">
+                          <input
+                            type="text"
+                            placeholder="Custom RFID UID..."
+                            value={customRfidInput}
+                            onChange={e => setCustomRfidInput(e.target.value)}
+                            className="flex-1 bg-black/40 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-purple-400"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (customRfidInput.trim()) handleRfidCardTap(customRfidInput)
+                            }}
+                            className="px-3 py-1.5 bg-purple-600 text-white font-bold text-xs rounded-lg hover:bg-purple-500"
+                          >
+                            TAP
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -1289,6 +1464,73 @@ export default function MobileSimulator({
                   >
                     {isRecording ? 'STOP' : voiceNote ? 'RE-RECORD' : 'RECORD'}
                   </button>
+                </div>
+
+                {/* 30-Second Security Video Evidence Recording */}
+                <div className="flex flex-col gap-2 bg-[#12181A] p-3.5 rounded-xl border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Camera className={`w-4 h-4 ${isVideoRecording ? 'text-red-500 animate-pulse' : 'text-[#3DDCC5]'}`} />
+                      <div className="flex flex-col">
+                        <span className="text-xs font-semibold text-white">
+                          {isVideoRecording ? `Recording Video (${videoSeconds}s)` : videoNote ? '30s Video Evidence Attached' : '30s Security Video Clip'}
+                        </span>
+                        <span className="text-[9px] text-white/40 font-mono">Max 30 seconds video evidence</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        ref={videoInputRef}
+                        accept="video/*"
+                        capture="environment"
+                        onChange={handleVideoFileCapture}
+                        className="hidden"
+                      />
+
+                      {isVideoRecording ? (
+                        <button
+                          type="button"
+                          onClick={stop30sVideoRecording}
+                          className="px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-bold font-mono animate-pulse"
+                        >
+                          STOP ({videoSeconds}s)
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={start30sVideoRecording}
+                          className="px-3 py-1.5 rounded-lg bg-[#3DDCC5]/20 text-[#3DDCC5] hover:bg-[#3DDCC5]/30 text-xs font-bold font-mono border border-[#3DDCC5]/30 transition"
+                        >
+                          {videoNote ? 'RE-RECORD 30s' : 'REC 30s VIDEO'}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => videoInputRef.current && videoInputRef.current.click()}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
+                        title="Upload Video File"
+                      >
+                        <Camera className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Video Player Preview */}
+                  {videoNote && (
+                    <div className="w-full mt-1 flex flex-col gap-1">
+                      <video src={videoNote} controls className="w-full h-32 rounded-lg object-cover border border-[#3DDCC5]/30 bg-black" />
+                      <button
+                        type="button"
+                        onClick={() => setVideoNote(null)}
+                        className="text-[9px] text-red-400 hover:underline self-end font-mono"
+                      >
+                        Remove Video Clip
+                      </button>
+                    </div>
+                  )}
                 </div>
 
               </div>

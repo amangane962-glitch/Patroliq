@@ -1,8 +1,27 @@
 import React, { useState } from 'react'
-import { Award, Compass, CheckCircle, FileText, ShieldAlert, Users, Calendar, Volume2, Camera } from 'lucide-react'
+import { Award, Compass, CheckCircle, FileText, ShieldAlert, Users, Calendar, Volume2, Camera, Download } from 'lucide-react'
 
 export default function KPITracking({ sharedShifts, sharedScans, sharedCheckpoints }) {
   const [timeframe, setTimeframe] = useState('all')
+
+  const exportKpiCSV = () => {
+    const headers = ['Officer Name', 'Scans Completed', 'Geofence Breaches', 'Compliance Rate (%)', 'Activity Score']
+    const rows = guardLeaderboard.map(g => [
+      `"${(g.name || '').replace(/"/g, '""')}"`,
+      g.scans || 0,
+      g.breaches || 0,
+      `${g.compliance}%`,
+      g.score || 0
+    ])
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `PatrolIQ_KPI_Leaderboard_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   // Filter shifts based on timeframe (e.g. today, this week, all)
   const getFilteredShifts = () => {
@@ -121,6 +140,15 @@ export default function KPITracking({ sharedShifts, sharedScans, sharedCheckpoin
           Key Performance Indicators (KPIs)
         </h2>
         <div className="flex items-center gap-3">
+          <button
+            onClick={exportKpiCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-white text-xs font-mono font-medium hover:bg-white/10 transition cursor-pointer"
+            title="Export KPI Leaderboard CSV"
+          >
+            <Download className="w-3.5 h-3.5 text-[#3DDCC5]" />
+            <span>EXPORT CSV</span>
+          </button>
+
           <select
             value={timeframe}
             onChange={e => setTimeframe(e.target.value)}

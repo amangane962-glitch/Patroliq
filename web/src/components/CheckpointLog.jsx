@@ -65,7 +65,26 @@ export default function CheckpointLog({ sharedScans }) {
   })
 
   const handleExport = () => {
-    alert('Exporting log records as spreadsheet report...')
+    const headers = ['Scan ID', 'Site', 'Route', 'Checkpoint', 'Guard', 'Scanned At', 'Geofence Validated', 'Tag Code', 'Notes']
+    const rows = filtered.map(l => [
+      l.id,
+      `"${(l.site || '').replace(/"/g, '""')}"`,
+      `"${(l.route || '').replace(/"/g, '""')}"`,
+      `"${(l.checkpoint || '').replace(/"/g, '""')}"`,
+      `"${(l.guard || '').replace(/"/g, '""')}"`,
+      l.scanned_at || '',
+      l.within_geofence ? 'YES' : 'BREACH',
+      l.tag_code || '',
+      `"${(l.notes || '').replace(/"/g, '""')}"`
+    ])
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `PatrolIQ_Checkpoint_Logs_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
   }
 
   return (
@@ -76,10 +95,11 @@ export default function CheckpointLog({ sharedScans }) {
         <div className="flex items-center gap-3">
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-semibold text-white hover:bg-white/10 transition-all font-mono"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs font-semibold text-white hover:bg-white/10 transition-all font-mono cursor-pointer"
+            title="Export Patrol Log CSV"
           >
-            <FileText className="w-3.5 h-3.5" />
-            EXPORT SPREADSHEET
+            <FileText className="w-3.5 h-3.5 text-[#3DDCC5]" />
+            <span>EXPORT CSV SPREADSHEET</span>
           </button>
         </div>
       </header>

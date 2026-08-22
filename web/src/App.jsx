@@ -14,6 +14,12 @@ import Incidents from './components/Incidents'
 import AuditTrail from './components/AuditTrail'
 import { extractTagCode } from './services/qrScannerService'
 
+const DEFAULT_SITES = [
+  { id: 's1', name: 'Main Mining Depot', address: 'Plot 402, North Perimeter Rd', latitude: -12.9841, longitude: 28.6412, geofence_radius_meters: 25.0, security_level: 'High', geofence: 'POLYGON((80 80, 520 80, 460 320, 60 280, 80 80))' },
+  { id: 's2', name: 'Washing Plant Area', address: 'Industrial Zone East, Gate 4', latitude: -12.9850, longitude: 28.6425, geofence_radius_meters: 30.0, security_level: 'Medium', geofence: 'POLYGON((100 100, 300 100, 300 300, 100 300, 100 100))' },
+  { id: 's3', name: 'East Logistics Hub', address: 'Highway Sector 12', latitude: -12.9835, longitude: 28.6405, geofence_radius_meters: 20.0, security_level: 'High', geofence: 'POLYGON((50 50, 250 50, 250 250, 50 250, 50 50))' }
+]
+
 const DEFAULT_CHECKPOINTS = [
   { id: 'c1', name: 'North Gate Perimeter', tag_code: 'QR-N483', site: 'Main Mining Depot', route: 'Perimeter West A', latitude: -12.9841, longitude: 28.6412, geofence_radius_meters: 15.0 },
   { id: 'c2', name: 'Fuel Depot Storage', tag_code: 'NFC-F239', site: 'Main Mining Depot', route: 'Perimeter West A', latitude: -12.9845, longitude: 28.6418, geofence_radius_meters: 15.0 },
@@ -130,6 +136,22 @@ export default function App() {
   const [activeShiftSite, setActiveShiftSite] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [initialScanCode, setInitialScanCode] = useState(null)
+
+  // Shared Persistent Sites / Locations State with LocalStorage Sync
+  const [sites, setSites] = useState(() => {
+    try {
+      const saved = localStorage.getItem('patroliq_sites')
+      return saved ? JSON.parse(saved) : DEFAULT_SITES
+    } catch (e) {
+      return DEFAULT_SITES
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('patroliq_sites', JSON.stringify(sites))
+    } catch (e) {}
+  }, [sites])
 
   // Shared Persistent Checkpoints State with LocalStorage Sync
   const [checkpoints, setCheckpoints] = useState(() => {
@@ -336,17 +358,19 @@ export default function App() {
     const officerName = scanData.officer_name || (activeSimShift ? activeSimShift.guard_name : 'Amadou Camara')
 
     const newScan = {
-      id: scanData.client_generated_id || ('sc_sim_' + Date.now()),
-      site: activeSimShift ? activeSimShift.site_name : 'Main Mining Depot',
-      route: 'Patrol Route A',
+      id: 'sc_' + Date.now(),
+      site: activeShiftSite || scanData.site || 'Main Mining Depot',
+      route: scanData.route || 'Perimeter Route',
       checkpoint: scanData.checkpoint_name,
       guard: officerName,
-      scanned_at: scanData.scanned_at,
+      scanned_at: new Date().toISOString(),
       within_geofence: scanData.within_geofence,
-      tag_code: scanData.tag_code,
-      notes: scanData.notes,
-      photo_url: scanData.photo_url,
-      voice_note_url: scanData.voice_note_url,
+      tag_code: scanData.code || scanData.tag_code,
+      notes: scanData.notes || '',
+      photo_url: scanData.photo_url || null,
+      voice_note_url: scanData.voice_note_url || null,
+      video_url: scanData.video_url || null,
+      rfid_tag: scanData.rfid_tag || null,
       shift_id: shiftId
     }
 
@@ -357,7 +381,7 @@ export default function App() {
       user: officerName,
       role: 'guard',
       action: 'CHECKPOINT_SCAN',
-      details: `Scanned ${scanData.checkpoint_name} (${scanData.tag_code}) - ${scanData.within_geofence ? 'Geofence Validated' : 'GEOFENCE BREACH'}`,
+      details: `Scanned ${scanData.checkpoint_name} (${scanData.tag_code || scanData.code}) - ${scanData.within_geofence ? 'Geofence Validated' : 'GEOFENCE BREACH'}${scanData.video_url ? ' [30s Video Evidence]' : ''}`,
       created_at: new Date().toISOString(),
       ip_address: 'Mobile Device PWA'
     }
@@ -380,15 +404,15 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <LiveOverview sharedScans={scans} sharedIncidents={incidents} />
+        return <LiveOverview sharedScans={scans} sharedIncidents={incidents} sharedSites={sites} />
       case 'sites':
-        return <SitesAndRoutes />
+        return <SitesAndRoutes sharedSites={sites} setSharedSites={setSites} />
       case 'checkpoints':
-        return <Checkpoints checkpoints={checkpoints} setCheckpoints={setCheckpoints} />
+        return <Checkpoints checkpoints={checkpoints} setCheckpoints={setCheckpoints} sharedSites={sites} />
       case 'log':
         return <CheckpointLog sharedScans={scans} />
       case 'incidents':
-        return <Incidents sharedIncidents={incidents} setSharedIncidents={setIncidents} />
+        return <Incidents sharedIncidents={incidents} setSharedIncidents={setIncidents} sharedSites={sites} />
       case 'reports':
         return <ShiftReports sharedShifts={shifts} setSharedShifts={setShifts} sharedScans={scans} />
       case 'kpis':
@@ -409,10 +433,11 @@ export default function App() {
             initialScanCode={initialScanCode}
             sharedUsers={users}
             checkpoints={checkpoints}
+            sharedSites={sites}
           />
         )
       default:
-        return <LiveOverview sharedScans={scans} sharedIncidents={incidents} />
+        return <LiveOverview sharedScans={scans} sharedIncidents={incidents} sharedSites={sites} />
     }
   }
 
