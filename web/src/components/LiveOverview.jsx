@@ -240,24 +240,28 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#070a0f] text-slate-100 font-sans p-3 md:p-5 gap-4 overflow-y-auto">
+    <div className="flex-1 flex flex-col min-h-screen bg-transparent text-slate-100 font-sans p-3 md:p-5 gap-4 overflow-y-auto">
       {/* Top Operations Header Bar (Screenshot 1 Top Navigation) */}
-      <header className="cyber-panel px-4 py-2.5 rounded-xl flex items-center justify-between border border-[#00f2fe]/20">
+      <header className="px-4 py-3 rounded-[18px] flex items-center justify-between border border-[#1de7c7]/10 bg-[linear-gradient(135deg,_rgba(13,21,27,0.94),_rgba(10,15,20,0.98))] shadow-[0_10px_24px_rgba(15,23,42,0.14)] backdrop-blur-md">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <button 
               onClick={onOpenSidebar}
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg border border-white/10 transition"
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl border border-white/10 transition"
               title="Open Navigation Menu"
             >
-              <Menu className="w-4 h-4 text-[#00f2fe]" />
+              <Menu className="w-4 h-4 text-[#1de7c7]" />
             </button>
-            <Shield className="w-5 h-5 text-[#00f2fe]" />
-            <h1 className="font-heading font-bold text-white tracking-wider text-base">Operations Center</h1>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#1de7c7]/10 border border-[#1de7c7]/25 flex items-center justify-center">
+                <Shield className="w-4 h-4 text-[#1de7c7]" />
+              </div>
+              <h1 className="font-heading font-bold text-white tracking-wider text-base">Operations Center</h1>
+            </div>
           </div>
-          <nav className="hidden lg:flex items-center gap-4 text-xs font-mono text-slate-400">
+          <nav className="hidden lg:flex items-center gap-4 text-[11px] font-mono text-slate-400">
             {['Offices', 'Templates', 'Approvals', 'Compliances', 'Monitors', 'Cross', 'Logo'].map((item, idx) => (
-              <span key={idx} className="hover:text-[#00f2fe] cursor-pointer transition">{item}</span>
+              <span key={idx} className="hover:text-[#1de7c7] cursor-pointer transition">{item}</span>
             ))}
           </nav>
         </div>
@@ -268,18 +272,18 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
             <input 
               type="text" 
               placeholder="Search..." 
-              className="bg-[#0b141c] border border-[#00f2fe]/20 rounded-full pl-8 pr-3 py-1 text-xs text-white focus:outline-none focus:border-[#00f2fe] w-36"
+              className="bg-[#0b141c] border border-[#1de7c7]/15 rounded-full pl-8 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#1de7c7] w-36 shadow-inner"
             />
           </div>
           
-          <div className="bg-[#00f2fe]/10 border border-[#00f2fe]/30 px-3 py-1 rounded-full text-xs font-mono font-bold text-[#00f2fe] flex items-center gap-1.5 shadow-[0_0_10px_rgba(0,242,254,0.15)]">
-            <span className="w-2 h-2 rounded-full bg-[#00f2fe] animate-pulse"></span>
+          <div className="bg-[#1de7c7]/10 border border-[#1de7c7]/20 px-3 py-1.5 rounded-full text-xs font-mono font-bold text-[#d7fff6] flex items-center gap-1.5 shadow-[0_0_12px_rgba(29,231,199,0.16)]">
+            <span className="w-2 h-2 rounded-full bg-[#1de7c7] animate-pulse"></span>
             <span>0,071,000</span>
           </div>
 
           <button 
             onClick={triggerSimulationScan}
-            className="bg-[#00f2fe] text-black font-mono font-bold text-xs px-3 py-1 rounded-full hover:bg-[#00d2ff] transition shadow-[0_0_15px_rgba(0,242,254,0.4)] flex items-center gap-1"
+            className="bg-[linear-gradient(135deg,_#1de7c7,_#6feec9)] text-black font-mono font-bold text-xs px-3 py-1.5 rounded-full hover:brightness-110 transition shadow-[0_12px_26px_rgba(29,231,199,0.35)] flex items-center gap-1"
           >
             <Play className="w-3 h-3 fill-current" />
             <span>Simulate Scan</span>
@@ -293,7 +297,7 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
         {/* TOP ROW: 4 SECTIONS */}
         
         {/* 1. Readiness & Metric Gauge (Left Column - 3 cols) */}
-        <div className="lg:col-span-3 cyber-panel p-4 rounded-xl flex flex-col justify-between border border-[#00f2fe]/15 gap-4">
+        <div className="lg:col-span-3 cyber-panel p-4 rounded-[18px] flex flex-col justify-between border border-[#1de7c7]/10 gap-4 shadow-[0_12px_24px_rgba(15,23,42,0.12)]">
           <div className="flex items-center justify-between border-b border-[#00f2fe]/10 pb-2">
             <span className="font-mono text-xs font-bold text-slate-300 uppercase tracking-wider">OR 52 NONONCO?</span>
             <span className="text-[10px] text-[#00f2fe] font-mono">LIVE GAUGE</span>
@@ -336,7 +340,7 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
         </div>
 
         {/* 2. War Room Alert Central Radar Visualizer (Middle Column - 5 cols) */}
-        <div className="lg:col-span-5 cyber-panel-glow p-4 rounded-xl flex flex-col justify-between border border-[#00f2fe]/30 relative overflow-hidden">
+        <div className="lg:col-span-5 cyber-panel-glow p-4 rounded-[18px] flex flex-col justify-between border border-[#1de7c7]/20 relative overflow-hidden shadow-[0_18px_36px_rgba(14,22,29,0.18)]">
           <div className="flex items-center justify-between border-b border-[#00f2fe]/20 pb-2.5 z-10">
             <div className="flex items-center gap-2">
               <Radio className="w-4 h-4 text-[#00f2fe] animate-pulse" />
@@ -385,8 +389,8 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
         </div>
 
         {/* 3. Priority War Room Alerts & Action Cards (Right Middle - 2 cols) */}
-        <div className="lg:col-span-2 cyber-panel p-4 rounded-xl flex flex-col justify-between border border-[#00f2fe]/15 gap-2">
-          <div className="flex items-center justify-between border-b border-[#00f2fe]/10 pb-2">
+        <div className="lg:col-span-2 cyber-panel p-4 rounded-[18px] flex flex-col justify-between border border-[#1de7c7]/10 gap-2 shadow-[0_12px_24px_rgba(15,23,42,0.12)]">
+          <div className="flex items-center justify-between border-b border-[#1de7c7]/10 pb-2">
             <span className="font-mono text-xs font-bold text-slate-300 uppercase">PRAATION ALOSH</span>
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
           </div>
@@ -424,8 +428,8 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
         </div>
 
         {/* 4. Security Breakdown & Risk Curve (Far Right - 2 cols) */}
-        <div className="lg:col-span-2 cyber-panel p-4 rounded-xl flex flex-col justify-between border border-[#00f2fe]/15 gap-2">
-          <div className="flex items-center justify-between border-b border-[#00f2fe]/10 pb-2">
+        <div className="lg:col-span-2 cyber-panel p-4 rounded-[18px] flex flex-col justify-between border border-[#1de7c7]/10 gap-2 shadow-[0_12px_24px_rgba(15,23,42,0.12)]">
+          <div className="flex items-center justify-between border-b border-[#1de7c7]/10 pb-2">
             <span className="font-mono text-xs font-bold text-slate-300 uppercase">BRETKOW</span>
             <span className="text-[9px] text-slate-500 font-mono">RISK</span>
           </div>
@@ -471,7 +475,7 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
       </div>
 
       {/* MIDDLE WIDE PATROL ACTIVITY LINE GRAPH (Screenshot 1 Middle Wide Section) */}
-      <div className="cyber-panel p-4 rounded-xl border border-[#00f2fe]/20 flex flex-col gap-3">
+      <div className="cyber-panel p-4 rounded-[18px] border border-[#1de7c7]/10 flex flex-col gap-3 shadow-[0_12px_24px_rgba(15,23,42,0.12)]">
         <div className="flex items-center justify-between border-b border-[#00f2fe]/10 pb-2">
           <div className="flex items-center gap-2">
             <BarChart2 className="w-4 h-4 text-[#00f2fe]" />
@@ -517,8 +521,8 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         
         {/* 1. Incident Commentary Panel */}
-        <div className="cyber-panel p-3.5 rounded-xl border border-[#00f2fe]/15 flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#00f2fe]/10 pb-1">Prosciant Commentary</span>
+        <div className="cyber-panel p-3.5 rounded-[16px] border border-[#1de7c7]/10 flex flex-col justify-between shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#1de7c7]/10 pb-1">Prosciant Commentary</span>
           <div className="flex flex-col gap-2 my-2 font-mono">
             <div className="bg-[#0b141c] p-2 rounded border border-[#00f2fe]/10 flex items-center justify-between">
               <span className="text-[9px] text-slate-400">Patrol Progress</span>
@@ -532,8 +536,8 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
         </div>
 
         {/* 2. Dynamic Gauge Circles (WINMAX MCILITILAY) */}
-        <div className="cyber-panel p-3.5 rounded-xl border border-[#00f2fe]/15 flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#00f2fe]/10 pb-1">WINMAX MCILITILAY</span>
+        <div className="cyber-panel p-3.5 rounded-[16px] border border-[#1de7c7]/10 flex flex-col justify-between shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#1de7c7]/10 pb-1">WINMAX MCILITILAY</span>
           <div className="flex items-center justify-around my-2">
             <div className="w-9 h-9 rounded-full bg-[#0b141c] border border-[#00f2fe] flex items-center justify-center text-[10px] font-mono font-bold text-[#00f2fe]">
               3%
@@ -549,8 +553,8 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
         </div>
 
         {/* 3. Shift Timer / Digital Clock */}
-        <div className="cyber-panel p-3.5 rounded-xl border border-[#00f2fe]/15 flex flex-col justify-between text-center">
-          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#00f2fe]/10 pb-1">SHIFT TIMER</span>
+        <div className="cyber-panel p-3.5 rounded-[16px] border border-[#1de7c7]/10 flex flex-col justify-between text-center shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#1de7c7]/10 pb-1">SHIFT TIMER</span>
           <div className="my-2 py-1 bg-[#0b141c] rounded border border-[#00f2fe]/20">
             <Clock className="w-4 h-4 text-[#00f2fe] mx-auto mb-1 animate-pulse" />
             <span className="text-sm font-bold font-mono text-[#00f2fe] tracking-wider">{currentTimeStr || '06,10910,7,023'}</span>
@@ -559,8 +563,8 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
         </div>
 
         {/* 4. Action Trigger Buttons Panel */}
-        <div className="cyber-panel p-3.5 rounded-xl border border-[#00f2fe]/15 flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#00f2fe]/10 pb-1">PINGTILAS AIMAS</span>
+        <div className="cyber-panel p-3.5 rounded-[16px] border border-[#1de7c7]/10 flex flex-col justify-between shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#1de7c7]/10 pb-1">PINGTILAS AIMAS</span>
           <div className="grid grid-cols-2 gap-2 my-2">
             <button className="bg-[#00f2fe]/20 border border-[#00f2fe]/40 text-[#00f2fe] text-[9px] font-mono font-bold p-2 rounded hover:bg-[#00f2fe]/30 transition">
               View Cam
@@ -575,8 +579,8 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
         </div>
 
         {/* 5. Quick Dispatch / Alert Input */}
-        <div className="cyber-panel p-3.5 rounded-xl border border-[#00f2fe]/15 flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#00f2fe]/10 pb-1">RAW ARNT</span>
+        <div className="cyber-panel p-3.5 rounded-[16px] border border-[#1de7c7]/10 flex flex-col justify-between shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+          <span className="text-[10px] font-mono font-bold text-slate-300 uppercase border-b border-[#1de7c7]/10 pb-1">RAW ARNT</span>
           <div className="flex flex-col gap-1.5 my-2">
             <input 
               type="text" 
@@ -591,8 +595,8 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
         </div>
 
         {/* 6. Global Site Radar Map Widget */}
-        <div className="cyber-panel p-3.5 rounded-xl border border-[#00f2fe]/15 flex flex-col justify-between">
-          <div className="flex items-center justify-between border-b border-[#00f2fe]/10 pb-1">
+        <div className="cyber-panel p-3.5 rounded-[16px] border border-[#1de7c7]/10 flex flex-col justify-between shadow-[0_8px_18px_rgba(15,23,42,0.08)]">
+          <div className="flex items-center justify-between border-b border-[#1de7c7]/10 pb-1">
             <span className="text-[10px] font-mono font-bold text-slate-300 uppercase">PINGTILAS AIMAS</span>
             <Globe className="w-3.5 h-3.5 text-[#00f2fe]" />
           </div>

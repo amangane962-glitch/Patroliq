@@ -5,18 +5,27 @@
 @tailwind utilities;
 
 :root {
-  --color-cyber-bg: #070a0f;
-  --color-panel-bg: #0d151c;
-  --color-panel-border: rgba(0, 242, 254, 0.15);
-  --color-cyan-glow: #00f2fe;
-  --color-teal-accent: #00d2ff;
+  --color-shell-bg: #dfe9e7;
+  --color-surface: #eff6f5;
+  --color-panel-bg: rgba(11, 20, 25, 0.94);
+  --color-panel-border: rgba(16, 185, 129, 0.22);
+  --color-cyan-glow: #1de7c7;
+  --color-teal-accent: #38e1d2;
   --color-emerald-accent: #10b981;
-  --color-emerald-bright: #00e5a3;
+  --color-emerald-bright: #2be3a6;
+  --color-soft-text: #d9e9ee;
+}
+
+html, body, #root {
+  margin: 0;
+  min-height: 100%;
+  height: 100%;
 }
 
 body {
-  margin: 0;
-  background-color: #070a0f;
+  background:
+    radial-gradient(circle at top, rgba(255,255,255,0.6), rgba(223,233,231,0.8) 28%, rgba(200,213,210,0.95) 100%),
+    #dfe9e7;
   color: #e2e8f0;
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;

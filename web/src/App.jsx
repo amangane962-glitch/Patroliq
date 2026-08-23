@@ -442,10 +442,10 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#070a0f] text-[#E2E8F0] font-sans relative">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#dfe9e7] text-[#E2E8F0] font-sans relative p-0 md:p-4">
       {/* Sidebar navigation drawer overlay */}
       <div 
-        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 transform h-full shrink-0 shadow-2xl ${
+        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 transform h-full shrink-0 shadow-[0_30px_80px_rgba(15,23,42,0.22)] ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -460,9 +460,9 @@ export default function App() {
         />
       )}
 
-      <div className="flex-grow flex flex-col overflow-hidden relative">
+      <div className="flex-grow flex flex-col overflow-hidden relative rounded-none md:rounded-[32px] border border-[#0f172a]/10 bg-[radial-gradient(circle_at_top,_rgba(43,151,137,0.11),_transparent_36%),linear-gradient(180deg,_rgba(12,18,23,0.97),_rgba(10,16,20,1))] shadow-[0_32px_80px_rgba(15,23,42,0.18)]">
         {/* Mobile Header top bar */}
-        <header className="h-14 border-b border-[#00f2fe]/15 flex items-center px-4 bg-[#0d151c] md:hidden shrink-0 justify-between">
+        <header className="h-14 border-b border-[#1de7c7]/15 flex items-center px-4 bg-[#111d22]/90 md:hidden shrink-0 justify-between backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setSidebarOpen(true)}
