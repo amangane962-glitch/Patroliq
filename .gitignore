@@ -4,8 +4,8 @@ web/node_modules/
 mobile/node_modules/
 
 # Build outputs
-dist/
-web/dist/
+# dist/
+# web/dist/
 build/
 *.exe
 
