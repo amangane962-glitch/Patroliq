@@ -8,6 +8,7 @@ mobile/node_modules/
 # web/dist/
 build/
 *.exe
+*.apk
 
 # Logs
 *.log
