@@ -3,7 +3,8 @@ import {
   Shield, Wifi, WifiOff, Volume2, Camera, ArrowLeft, Mic, CheckCircle, Trash2, 
   Smartphone, Battery, Signal, Compass, Scan, ToggleLeft, ToggleRight, 
   AlertTriangle, Play, Zap, Radio, AlertOctagon, FileText, Check, Lock, RefreshCw, Send,
-  HelpCircle, Settings, Info
+  HelpCircle, Settings, Info, Bell, Search, Share2, MapPin, Filter, Plus, Users, Home,
+  Grid, PlusCircle, Image as ImageIcon, Video, ArrowRight, UserCheck, Eye, Layers
 } from 'lucide-react'
 import jsQR from 'jsqr'
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics'
@@ -45,6 +46,8 @@ export default function MobileSimulator({
   checkpoints 
 }) {
   const [screen, setScreen] = useState('login') // login, dashboard, scan, report, handover, diagnostics
+  const [mobileTab, setMobileTab] = useState('guard_tour') // guard_tour (Screenshot 3), radar_map (Screenshot 2), search_alerts (Screenshot 2 Right)
+  const [activeFilterPill, setActiveFilterPill] = useState('Incidents')
   const [credentials, setCredentials] = useState({ email: 'amadou@grizzly.com', password: '••••••••' })
   const [activeOfficer, setActiveOfficer] = useState({ name: 'Amadou Camara', role: 'GUARD', email: 'amadou@grizzly.com', id: 'ID-984' })
   const [selectedSite, setSelectedSite] = useState('Main Mining Depot')
@@ -908,221 +911,320 @@ export default function MobileSimulator({
             </div>
           )}
 
-          {/* SCREEN 2: Dashboard */}
+          {/* SCREEN 2: Dashboard (Multi-View: Guard Tour, Radar Map, Search Alerts) */}
           {screen === 'dashboard' && (
-            <div className="flex-grow flex flex-col justify-between p-4 overflow-y-auto">
-              <div className="flex flex-col gap-3.5">
-                
-                {/* Officer Profile Header */}
-                <div className="flex items-center justify-between bg-[#12181A] p-3 rounded-xl border border-white/10">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-[#3DDCC5]/20 border border-[#3DDCC5]/40 flex items-center justify-center font-bold text-[#3DDCC5] text-xs">
-                      {activeOfficer.name.substring(0, 2).toUpperCase()}
+            <div className="flex-grow flex flex-col justify-between bg-[#05080e] relative overflow-hidden pb-16">
+              
+              {/* VIEW 1: Guard Tour - Patrol App (Screenshot 3) */}
+              {mobileTab === 'guard_tour' && (
+                <div className="flex-1 flex flex-col p-4 gap-4 overflow-y-auto">
+                  {/* Top Bar Header */}
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3 pt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-white font-heading">Guard Tour - Patrol App</span>
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-xs font-bold text-white">{activeOfficer.name}</span>
-                      <span className="text-[9px] text-[#3DDCC5] font-mono">{activeOfficer.role} • {activeOfficer.id}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="relative cursor-pointer" onClick={() => setMobileTab('search_alerts')}>
+                        <Bell className="w-5 h-5 text-white/80" />
+                        <span className="w-2 h-2 rounded-full bg-red-500 absolute -top-0.5 -right-0.5" />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setScreen('diagnostics')}
-                      className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70"
-                      title="Open Device Capability Diagnostics"
+                  {/* Hero Card 1: Scan QR/NFC (Screenshot 3) */}
+                  <div 
+                    onClick={() => setScreen('scan')}
+                    className="bg-[#142030] hover:bg-[#1a293d] border border-[#00f2fe]/20 p-5 rounded-2xl flex items-center justify-between cursor-pointer transition shadow-lg relative overflow-hidden group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-[#00f2fe]/10 border border-[#00f2fe]/30 flex items-center justify-center text-[#00f2fe] shadow-[0_0_15px_rgba(0,242,254,0.15)]">
+                        <UserCheck className="w-7 h-7" />
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-base font-extrabold text-white tracking-wide">Scan QR/NFC</span>
+                        <span className="text-[10px] text-slate-400 font-mono">Instant Checkpoint Validation</span>
+                      </div>
+                    </div>
+                    <div className="w-9 h-9 rounded-full bg-white/5 group-hover:bg-[#00f2fe] group-hover:text-black flex items-center justify-center transition">
+                      <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-black" />
+                    </div>
+                  </div>
+
+                  {/* Hero Card 2: Dynamic GPS / Live GPS Route Preview (Screenshot 3) */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#121c27] p-3 rounded-xl border border-white/10 flex flex-col justify-between h-28 relative overflow-hidden">
+                      <span className="bg-[#00f2fe]/20 text-[#00f2fe] border border-[#00f2fe]/30 text-[9px] font-mono font-bold px-2 py-0.5 rounded w-max">
+                        Dynamic GPS
+                      </span>
+                      {/* Mini Route Graphic */}
+                      <svg className="w-full h-12 my-1" viewBox="0 0 100 40">
+                        <path d="M 10 30 L 40 10 L 70 25 L 90 5" fill="none" stroke="#10b981" strokeWidth="2" strokeDasharray="3 3" />
+                        <circle cx="10" cy="30" r="3" fill="#10b981" />
+                        <circle cx="40" cy="10" r="3" fill="#ef4444" />
+                        <circle cx="90" cy="5" r="4" fill="#00f2fe" className="animate-ping" />
+                      </svg>
+                      <span className="text-[9px] text-slate-400 font-mono">Route Line Active</span>
+                    </div>
+
+                    <div 
+                      onClick={() => setMobileTab('radar_map')}
+                      className="bg-[#121c27] p-3 rounded-xl border border-white/10 flex flex-col justify-between h-28 cursor-pointer relative overflow-hidden group hover:border-[#10b981]/50"
                     >
-                      <Settings className="w-4 h-4" />
+                      <span className="bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30 text-[9px] font-mono font-bold px-2 py-0.5 rounded w-max">
+                        Live GPS
+                      </span>
+                      <div className="flex items-center justify-center my-1">
+                        <div className="w-10 h-10 rounded-full border border-[#10b981]/40 flex items-center justify-center relative">
+                          <span className="w-8 h-8 rounded-full bg-[#10b981]/20 animate-ping absolute" />
+                          <MapPin className="w-5 h-5 text-[#10b981]" />
+                        </div>
+                      </div>
+                      <span className="text-[9px] text-slate-400 font-mono text-center">Open Map Visualizer</span>
+                    </div>
+                  </div>
+
+                  {/* Primary Glowing Green Action Button: Send Incident Report (Screenshot 3) */}
+                  <button
+                    onClick={() => {
+                      setScannedTag({ name: 'MANUAL INCIDENT ENTRY', tag_code: 'INC-NOW' })
+                      setScreen('report')
+                    }}
+                    className="w-full py-4 bg-[#10b981] hover:bg-[#059669] text-black font-extrabold rounded-2xl flex items-center justify-center gap-2 text-sm shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all transform active:scale-98"
+                  >
+                    <Camera className="w-5 h-5" />
+                    <span>Send Incident Report</span>
+                  </button>
+
+                  {/* Quick Action Buttons */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <button 
+                      onClick={() => {
+                        setScannedTag({ name: 'TEONNET SCAN', tag_code: 'TEON-809' })
+                        setScreen('report')
+                      }}
+                      className="bg-[#121c27] hover:bg-[#182535] border border-white/10 py-3 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-2 transition"
+                    >
+                      <Plus className="w-4 h-4 text-[#00f2fe]" />
+                      <span>+ Teonnet</span>
                     </button>
                     <button 
-                      onClick={() => setSosTriggered(!sosTriggered)}
-                      className={`px-2 py-1 rounded-lg text-[9px] font-bold font-mono border transition-all ${
-                        sosTriggered ? 'bg-red-500 text-white border-red-400 animate-pulse' : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20'
-                      }`}
-                    >
-                      {sosTriggered ? 'SOS SENT' : 'SOS'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Real Hardware & Connectivity Status Banner */}
-                <div className="bg-[#12181A] p-3 rounded-xl border border-white/5 flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] text-white/40 font-mono uppercase tracking-wider">HARDWARE STATUS</span>
-                    <div className="flex items-center gap-1.5">
-                      {capabilities.online ? (
-                        <span className="text-[9px] text-emerald-400 font-mono font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> ONLINE
-                        </span>
-                      ) : (
-                        <span className="text-[9px] text-amber-400 font-mono font-bold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" /> OFFLINE MODE
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* GPS */}
-                  <div className="flex items-center justify-between py-0.5">
-                    <div className="flex items-center gap-2">
-                      <Compass className={`w-4 h-4 ${gpsEnabled ? 'text-[#3DDCC5]' : 'text-white/20'}`} />
-                      <div className="flex flex-col">
-                        <span className={gpsEnabled ? 'text-white/90 font-medium text-[11px]' : 'text-white/30 text-[11px]'}>Location Service</span>
-                        <span className="text-[9px] text-white/40 font-mono">{capabilities.locationSource}</span>
-                      </div>
-                    </div>
-                    <button onClick={() => setGpsEnabled(!gpsEnabled)}>
-                      {gpsEnabled ? <ToggleRight className="w-6 h-6 text-[#3DDCC5]" /> : <ToggleLeft className="w-6 h-6 text-white/20" />}
-                    </button>
-                  </div>
-
-                  {/* Camera / QR */}
-                  <div className="flex items-center justify-between py-0.5">
-                    <div className="flex items-center gap-2">
-                      <Camera className={`w-4 h-4 ${qrEnabled ? 'text-[#3DDCC5]' : 'text-white/20'}`} />
-                      <span className={qrEnabled ? 'text-white/90 font-medium text-[11px]' : 'text-white/30 text-[11px]'}>Camera QR Scanner</span>
-                    </div>
-                    <button onClick={() => setQrEnabled(!qrEnabled)}>
-                      {qrEnabled ? <ToggleRight className="w-6 h-6 text-[#3DDCC5]" /> : <ToggleLeft className="w-6 h-6 text-white/20" />}
-                    </button>
-                  </div>
-
-                  {/* NFC */}
-                  <div className="flex items-center justify-between py-0.5">
-                    <div className="flex items-center gap-2">
-                      <Scan className={`w-4 h-4 ${nfcEnabled ? 'text-[#3DDCC5]' : 'text-white/20'}`} />
-                      <div className="flex flex-col">
-                        <span className={nfcEnabled ? 'text-white/90 font-medium text-[11px]' : 'text-white/30 text-[11px]'}>Web NFC Reader</span>
-                        <span className="text-[9px] text-white/40 font-mono">{capabilities.nfc ? 'Supported' : 'Unsupported'}</span>
-                      </div>
-                    </div>
-                    <button onClick={() => setNfcEnabled(!nfcEnabled)}>
-                      {nfcEnabled ? <ToggleRight className="w-6 h-6 text-[#3DDCC5]" /> : <ToggleLeft className="w-6 h-6 text-white/20" />}
-                    </button>
-                  </div>
-
-                  {/* RFID */}
-                  <div className="flex items-center justify-between py-0.5">
-                    <div className="flex items-center gap-2">
-                      <Radio className={`w-4 h-4 ${rfidEnabled ? 'text-[#3DDCC5]' : 'text-white/20'}`} />
-                      <div className="flex flex-col">
-                        <span className={rfidEnabled ? 'text-white/90 font-medium text-[11px]' : 'text-white/30 text-[11px]'}>RFID Tag Reader</span>
-                        <span className="text-[9px] text-white/40 font-mono">USB / Bluetooth / 13.56MHz</span>
-                      </div>
-                    </div>
-                    <button onClick={() => setRfidEnabled(!rfidEnabled)}>
-                      {rfidEnabled ? <ToggleRight className="w-6 h-6 text-[#3DDCC5]" /> : <ToggleLeft className="w-6 h-6 text-white/20" />}
-                    </button>
-                  </div>
-
-                  {pendingQueueCount > 0 && (
-                    <div className="mt-1 p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-[10px] text-amber-300 font-mono flex items-center justify-between">
-                      <span>{pendingQueueCount} Scans Saved Offline</span>
-                      <button onClick={syncOfflineQueue} className="text-[#3DDCC5] font-bold underline">SYNC NOW</button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Shift Selector or Active Shift Duty Panel */}
-                {!activeShift ? (
-                  <div className="bg-[#12181A] p-4 rounded-2xl border border-white/5 flex flex-col gap-3 text-center items-center py-6">
-                    <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
-                      <Shield className="w-5 h-5 text-white/40" />
-                    </div>
-                    <span className="text-xs text-white/50">No Active Patrol Shift</span>
-                    <div className="w-full flex flex-col gap-2">
-                      <div className="flex flex-col gap-0.5 text-left font-mono">
-                        <span className="text-[8px] text-white/45">SITE LOCATION</span>
-                        <select
-                          value={selectedSite}
-                          onChange={e => setSelectedSite(e.target.value)}
-                          className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#3DDCC5]"
-                        >
-                          <option value="Main Mining Depot">Main Mining Depot</option>
-                          <option value="Washing Plant Area">Washing Plant Area</option>
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-0.5 text-left font-mono">
-                        <span className="text-[8px] text-white/45">SHIFT OR HANDOVER TYPE</span>
-                        <select
-                          value={selectedShiftType}
-                          onChange={e => setSelectedShiftType(e.target.value)}
-                          className="w-full bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-[#3DDCC5]"
-                        >
-                          <option value="Morning Shift">Morning Shift (06:00 - 14:00)</option>
-                          <option value="Afternoon Shift">Afternoon Shift (14:00 - 22:00)</option>
-                          <option value="Night Handover">Night Handover (22:00 - 06:00)</option>
-                        </select>
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleStartShift}
-                      className="w-full py-2.5 bg-[#3DDCC5]/15 border border-[#3DDCC5]/40 text-[#3DDCC5] font-bold rounded-xl hover:bg-[#3DDCC5]/25 text-xs shadow"
-                    >
-                      START PATROL SHIFT
-                    </button>
-                  </div>
-                ) : (
-                  <div className="bg-[#12181A] p-4 rounded-2xl border border-[#3DDCC5]/20 flex flex-col gap-4 text-center items-center py-5 shadow-lg shadow-[#3DDCC5]/5">
-                    <div className="flex items-center justify-between w-full border-b border-white/5 pb-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#3DDCC5] animate-ping" />
-                        <span className="text-xs font-bold text-white">{activeShift}</span>
-                      </div>
-                      <span className="text-[9px] text-[#3DDCC5] font-mono font-bold bg-[#3DDCC5]/10 px-2 py-0.5 rounded">
-                        SHIFT IN PROGRESS
-                      </span>
-                    </div>
-                    
-                    {/* Primary Scan Button */}
-                    <button
                       onClick={() => {
-                        if (!qrEnabled && !nfcEnabled) {
-                          alert('Please turn on Camera QR or NFC to start scanning.')
-                          return
-                        }
-                        setScreen('scan')
+                        if (fileInputRef.current) fileInputRef.current.click()
                       }}
-                      className="w-full py-4 bg-[#3DDCC5] text-black font-extrabold rounded-2xl flex items-center justify-center gap-3 hover:bg-[#3DDCC5]/90 text-sm shadow-xl shadow-[#3DDCC5]/25 transition-all transform hover:scale-[1.02]"
+                      className="bg-[#121c27] hover:bg-[#182535] border border-white/10 py-3 rounded-xl text-xs font-semibold text-white flex items-center justify-center gap-2 transition"
                     >
-                      <Camera className="w-5 h-5" />
-                      SCAN CHECKPOINT CODE
+                      <ImageIcon className="w-4 h-4 text-[#10b981]" />
+                      <span>Attach Photo</span>
                     </button>
+                  </div>
 
-                    {/* Route Checklist Progress */}
-                    <div className="w-full bg-black/40 rounded-xl p-2.5 border border-white/5 flex flex-col gap-1.5 text-left">
-                      <span className="text-[9px] font-mono text-white/40 uppercase">Assigned Checkpoints:</span>
-                      {checkpoints && checkpoints.slice(0, 3).map((cp, idx) => (
-                        <div key={cp.id} className="flex items-center justify-between text-[10px]">
-                          <span className="flex items-center gap-1.5 text-white/90 truncate max-w-[200px]">
-                            <CheckCircle className="w-3.5 h-3.5 text-[#3DDCC5]" />
-                            {cp.name} [{cp.tag_code}]
-                          </span>
-                          <span className="text-[#3DDCC5] font-mono text-[9px]">READY</span>
-                        </div>
+                  {/* Realistic NFC & QR Card Visual Element (Screenshot 3 Bottom Element) */}
+                  <div className="bg-[#0b1219] p-3 rounded-2xl border border-white/5 flex items-center justify-between mt-1">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
+                        <Scan className="w-5 h-5 text-[#00f2fe]" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-white">NFC Tag / QR Scanner Ready</span>
+                        <span className="text-[9px] text-slate-400 font-mono">Bring key fob near device or scan barcode</span>
+                      </div>
+                    </div>
+                    <span className="w-2 h-2 rounded-full bg-[#10b981] animate-pulse" />
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 2: AdvanceWork Sonar Radar Map (Screenshot 2 Left & Middle) */}
+              {mobileTab === 'radar_map' && (
+                <div className="flex-1 flex flex-col relative bg-black">
+                  {/* Top Bar Header */}
+                  <div className="h-14 px-4 border-b border-white/10 flex items-center justify-between bg-black/80 backdrop-blur z-20">
+                    <div className="flex items-center gap-3">
+                      <button className="text-white p-1"><Grid className="w-5 h-5" /></button>
+                      <div className="flex items-center gap-1 font-heading font-bold text-white text-sm">
+                        <span>Report</span>
+                        <ChevronRight className="w-4 h-4 text-slate-400 rotate-90" />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Search className="w-5 h-5 text-white/80 cursor-pointer" onClick={() => setMobileTab('search_alerts')} />
+                      <div className="w-7 h-7 rounded-full bg-[#10b981]/20 border border-[#10b981] flex items-center justify-center text-[10px] font-bold text-[#10b981]">
+                        AC
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Radar Sonar Map Visualization */}
+                  <div className="flex-1 relative bg-radar-grid bg-[#070a0f] flex items-center justify-center overflow-hidden">
+                    {/* Sonar Pulsing Rings Around Officer */}
+                    <div className="absolute w-48 h-48 rounded-full border border-[#10b981]/30 animate-sonar-pulse pointer-events-none" />
+                    <div className="absolute w-48 h-48 rounded-full border border-[#10b981]/30 animate-sonar-pulse-delayed pointer-events-none" />
+                    <div className="absolute w-72 h-72 rounded-full border border-[#10b981]/15 pointer-events-none" />
+                    
+                    {/* Active Guard Pin */}
+                    <div className="z-10 flex flex-col items-center">
+                      <div className="w-6 h-6 rounded-full bg-[#10b981] border-2 border-white shadow-[0_0_15px_#10b981] flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-full bg-black" />
+                      </div>
+                    </div>
+
+                    {/* Top Floating Notification Banner (Screenshot 2) */}
+                    <div className="absolute top-4 left-4 right-4 bg-black/80 backdrop-blur-md border border-white/20 p-3 rounded-2xl flex items-center gap-3 shadow-xl z-10">
+                      <div className="w-9 h-9 rounded-xl bg-white text-black font-extrabold flex items-center justify-center text-sm font-mono">
+                        A
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-white">Vatican Villa Advance</span>
+                        <span className="text-[9px] text-slate-400">Post 3 hours ago</span>
+                      </div>
+                    </div>
+
+                    {/* Incident Category Filter Pills (Screenshot 2) */}
+                    <div className="absolute top-20 left-4 right-4 flex items-center gap-2 overflow-x-auto z-10 no-scrollbar py-1">
+                      {['Incidents', 'Vehicle Incidents', 'Protectee Security Incident'].map((pill) => (
+                        <button
+                          key={pill}
+                          onClick={() => setActiveFilterPill(pill)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition ${
+                            activeFilterPill === pill
+                              ? 'bg-[#10b981] text-black font-bold shadow-[0_0_10px_rgba(16,185,129,0.4)]'
+                              : 'bg-black/60 backdrop-blur-md text-white border border-white/30'
+                          }`}
+                        >
+                          {pill}
+                        </button>
                       ))}
                     </div>
 
-                    <button
-                      onClick={() => {
-                        setScreen('handover')
-                        setHandoverNotes('')
-                        setHandoverPhoto(null)
-                        setHandoverVoiceNote(null)
-                      }}
-                      className="w-full py-2 border border-red-500/30 text-red-400 text-xs font-semibold rounded-xl hover:bg-red-500/10 cursor-pointer"
-                    >
-                      SUBMIT SHIFT REPORT & HANDOVER
-                    </button>
+                    {/* Bottom Sheet Card Overlay (Screenshot 2 Middle) */}
+                    <div className="absolute bottom-2 left-3 right-3 bg-[#0d141c] border border-white/15 p-4 rounded-2xl flex flex-col gap-2 z-10 shadow-2xl">
+                      <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                        <span>4.2 mi • 14100 Montfort Dr</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-white font-heading">Subway Montfort 425B</h4>
+                      <p className="text-[11px] text-slate-300 line-clamp-2">
+                        Survey subway and report the details about current situation for new jewelry shop.
+                      </p>
+                      <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[10px] text-slate-400">
+                        <span>Posted 3hrs ago</span>
+                        <div className="flex items-center gap-3">
+                          <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> 10 views</span>
+                          <span className="flex items-center gap-1 text-[#10b981] font-bold cursor-pointer"><Share2 className="w-3 h-3" /> Share</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* Status Footer */}
-              <div className="text-center text-[9px] text-white/30 font-mono mt-4 flex items-center justify-center gap-1">
-                <Lock className="w-3 h-3 text-[#3DDCC5]" />
-                SECURE PATROL JOURNAL • AUTOMATIC SYNC
-              </div>
+              {/* VIEW 3: Search & Incident Alerts Feed (Screenshot 2 Right) */}
+              {mobileTab === 'search_alerts' && (
+                <div className="flex-1 flex flex-col p-4 gap-4 bg-black overflow-y-auto">
+                  {/* Top Bar */}
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <button onClick={() => setMobileTab('guard_tour')} className="text-xs text-[#00f2fe] font-mono">Cancel</button>
+                    <span className="text-sm font-bold text-white font-heading">Search</span>
+                    <button className="text-xs text-[#10b981] font-mono font-bold">Filters</button>
+                  </div>
+
+                  {/* Search Bar Input */}
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                    <input 
+                      type="text" 
+                      placeholder="Search here" 
+                      className="w-full bg-[#121a24] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-[#10b981]"
+                    />
+                  </div>
+
+                  {/* Incident Feed Items (Screenshot 2 Rightmost Screen) */}
+                  <div className="flex flex-col gap-4">
+                    {/* Item 1 */}
+                    <div className="bg-[#0f1722] p-4 rounded-xl border border-white/10 flex flex-col gap-2">
+                      <h4 className="text-xs font-bold text-white">Fire Alerts</h4>
+                      <p className="text-[11px] text-slate-400">
+                        Survey subway and report the details about current situation for new jewelry shop.
+                      </p>
+                      <div className="flex items-center justify-between text-[9px] font-mono text-slate-500 pt-1">
+                        <span>Posted 5hrs ago</span>
+                        <span>4.2 mi • 14100 Montfort Dr</span>
+                      </div>
+                    </div>
+
+                    {/* Item 2 with Image */}
+                    <div className="bg-[#0f1722] p-4 rounded-xl border border-white/10 flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-2 flex-1">
+                        <h4 className="text-xs font-bold text-white">Traffic Update</h4>
+                        <p className="text-[11px] text-slate-400">
+                          Survey subway and report the details about current situation for new jewelry shop.
+                        </p>
+                        <div className="flex items-center justify-between text-[9px] font-mono text-slate-500 pt-1">
+                          <span>Posted 24 Nov, 2024</span>
+                          <span>4.2 mi • 14100 Montfort Dr</span>
+                        </div>
+                      </div>
+                      <div className="w-16 h-16 rounded-xl bg-slate-800 border border-white/10 overflow-hidden shrink-0">
+                        <img 
+                          src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=300&auto=format&fit=crop" 
+                          alt="Traffic Update" 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Floating Mobile Bottom Navigation Bar (Matching Screenshots 2 & 3) */}
+              <nav className="absolute bottom-0 left-0 right-0 h-16 bg-[#080d14] border-t border-white/10 flex items-center justify-around z-30 px-2 shadow-2xl">
+                <button
+                  onClick={() => setMobileTab('guard_tour')}
+                  className={`flex flex-col items-center gap-1 text-[10px] font-mono transition ${
+                    mobileTab === 'guard_tour' ? 'text-[#10b981] font-bold' : 'text-slate-500'
+                  }`}
+                >
+                  <Home className="w-5 h-5" />
+                  <span>Home</span>
+                </button>
+
+                <button
+                  onClick={() => setMobileTab('search_alerts')}
+                  className={`flex flex-col items-center gap-1 text-[10px] font-mono transition ${
+                    mobileTab === 'search_alerts' ? 'text-[#10b981] font-bold' : 'text-slate-500'
+                  }`}
+                >
+                  <Bell className="w-5 h-5" />
+                  <span>Alerts</span>
+                </button>
+
+                {/* Central Floating Action Button (+ Create / Scan) */}
+                <button
+                  onClick={() => setScreen('scan')}
+                  className="flex items-center justify-center p-3.5 rounded-full bg-[#10b981] text-black shadow-[0_0_15px_rgba(16,185,129,0.5)] -mt-6 border-4 border-[#080d14] transform active:scale-95 transition"
+                  title="Quick Scan Code"
+                >
+                  <Plus className="w-6 h-6 stroke-[3]" />
+                </button>
+
+                <button
+                  onClick={() => setMobileTab('radar_map')}
+                  className={`flex flex-col items-center gap-1 text-[10px] font-mono transition ${
+                    mobileTab === 'radar_map' ? 'text-[#10b981] font-bold' : 'text-slate-500'
+                  }`}
+                >
+                  <Shield className="w-5 h-5" />
+                  <span>Protectee</span>
+                </button>
+
+                <button
+                  onClick={() => setScreen('diagnostics')}
+                  className="flex flex-col items-center gap-1 text-[10px] font-mono text-slate-500 hover:text-white transition"
+                >
+                  <Users className="w-5 h-5" />
+                  <span>Team</span>
+                </button>
+              </nav>
+
             </div>
           )}
 
