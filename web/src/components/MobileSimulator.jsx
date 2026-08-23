@@ -46,7 +46,7 @@ export default function MobileSimulator({
   checkpoints 
 }) {
   const [screen, setScreen] = useState('login') // login, dashboard, scan, report, handover, diagnostics
-  const [mobileTab, setMobileTab] = useState('guard_tour') // guard_tour (Screenshot 3), radar_map (Screenshot 2), search_alerts (Screenshot 2 Right)
+  const [mobileTab, setMobileTab] = useState('start_planning') // start_planning (Screenshot 1 Left), radar_map (Screenshot 1 Middle), search_alerts (Screenshot 1 Right), guard_tour (Screenshot 2)
   const [activeFilterPill, setActiveFilterPill] = useState('Incidents')
   const [credentials, setCredentials] = useState({ email: 'amadou@grizzly.com', password: '••••••••' })
   const [activeOfficer, setActiveOfficer] = useState({ name: 'Amadou Camara', role: 'GUARD', email: 'amadou@grizzly.com', id: 'ID-984' })
@@ -911,11 +911,52 @@ export default function MobileSimulator({
             </div>
           )}
 
-          {/* SCREEN 2: Dashboard (Multi-View: Guard Tour, Radar Map, Search Alerts) */}
+          {/* SCREEN 2: Dashboard (Multi-View: Start Planning, Guard Tour, Radar Map, Search Alerts) */}
           {screen === 'dashboard' && (
             <div className="flex-grow flex flex-col justify-between bg-[#05080e] relative overflow-hidden pb-16">
               
-              {/* VIEW 1: Guard Tour - Patrol App (Screenshot 3) */}
+              {/* VIEW 0: Start Planning Onboarding (Screenshot 1 Left) */}
+              {mobileTab === 'start_planning' && (
+                <div className="flex-1 flex flex-col justify-between relative bg-black p-4">
+                  {/* Top Header */}
+                  <div className="h-12 flex items-center justify-between z-10">
+                    <span className="font-heading font-extrabold text-[#10b981] text-lg tracking-wide">AdvanceWork</span>
+                  </div>
+
+                  {/* Dark Map Background with Sonar Ring */}
+                  <div className="absolute inset-0 bg-radar-grid opacity-40 flex items-center justify-center pointer-events-none">
+                    <div className="w-56 h-56 rounded-full border border-[#10b981]/40 animate-sonar-pulse" />
+                    <div className="w-56 h-56 rounded-full border border-[#10b981]/40 animate-sonar-pulse-delayed" />
+                    <div className="w-6 h-6 rounded-full bg-[#10b981] border-2 border-white shadow-[0_0_20px_#10b981]" />
+                  </div>
+
+                  {/* Notification Card */}
+                  <div className="bg-black/90 border border-white/20 p-3.5 rounded-2xl flex items-center gap-3 shadow-2xl z-10 my-4">
+                    <div className="w-10 h-10 rounded-xl bg-white text-black font-extrabold flex items-center justify-center text-sm font-mono">
+                      A
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-white">Vatican Villa Advance</span>
+                      <span className="text-[10px] text-slate-400">Post 3 hours ago</span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Action Card */}
+                  <div className="flex flex-col gap-4 text-center z-10 mb-2">
+                    <h2 className="text-xl font-heading font-bold text-white px-4 leading-snug">
+                      Start Planning and get your Advance done
+                    </h2>
+                    <button
+                      onClick={() => setMobileTab('radar_map')}
+                      className="w-full py-4 bg-[#10b981] hover:bg-[#059669] text-black font-extrabold rounded-full text-sm shadow-[0_0_25px_rgba(16,185,129,0.5)] transition-all transform active:scale-95"
+                    >
+                      Get Started
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* VIEW 1: Guard Tour - Patrol App (Screenshot 2) */}
               {mobileTab === 'guard_tour' && (
                 <div className="flex-1 flex flex-col p-4 gap-4 overflow-y-auto">
                   {/* Top Bar Header */}

@@ -2,10 +2,10 @@ import React, { useEffect, useState, useRef } from 'react'
 import { supabase } from '../supabase'
 import { 
   Activity, ShieldAlert, CheckCircle, Navigation, Play, User, Search, 
-  Clock, Shield, Eye, AlertTriangle, ChevronRight, BarChart2, Globe, Radio, Check, Crosshair
+  Clock, Shield, Eye, AlertTriangle, ChevronRight, BarChart2, Globe, Radio, Check, Crosshair, Menu
 } from 'lucide-react'
 
-export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites }) {
+export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites, onOpenSidebar }) {
   const [stats, setStats] = useState({
     guardsActive: 4,
     checkpointsToday: 28,
@@ -245,6 +245,13 @@ export default function LiveOverview({ sharedScans, sharedIncidents, sharedSites
       <header className="cyber-panel px-4 py-2.5 rounded-xl flex items-center justify-between border border-[#00f2fe]/20">
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
+            <button 
+              onClick={onOpenSidebar}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg border border-white/10 transition"
+              title="Open Navigation Menu"
+            >
+              <Menu className="w-4 h-4 text-[#00f2fe]" />
+            </button>
             <Shield className="w-5 h-5 text-[#00f2fe]" />
             <h1 className="font-heading font-bold text-white tracking-wider text-base">Operations Center</h1>
           </div>

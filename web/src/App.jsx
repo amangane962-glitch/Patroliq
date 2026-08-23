@@ -404,7 +404,7 @@ export default function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'overview':
-        return <LiveOverview sharedScans={scans} sharedIncidents={incidents} sharedSites={sites} />
+        return <LiveOverview sharedScans={scans} sharedIncidents={incidents} sharedSites={sites} onOpenSidebar={() => setSidebarOpen(true)} />
       case 'sites':
         return <SitesAndRoutes sharedSites={sites} setSharedSites={setSites} />
       case 'checkpoints':
@@ -437,25 +437,25 @@ export default function App() {
           />
         )
       default:
-        return <LiveOverview sharedScans={scans} sharedIncidents={incidents} sharedSites={sites} />
+        return <LiveOverview sharedScans={scans} sharedIncidents={incidents} sharedSites={sites} onOpenSidebar={() => setSidebarOpen(true)} />
     }
   }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#070a0f] text-[#E2E8F0] font-sans relative">
-      {/* Sidebar navigation container */}
+      {/* Sidebar navigation drawer overlay */}
       <div 
-        className={`fixed md:relative z-40 transition-transform duration-300 transform h-full shrink-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 transform h-full shrink-0 shadow-2xl ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onCloseMobile={() => setSidebarOpen(false)} />
       </div>
 
-      {/* Backdrop overlay for mobile drawer */}
+      {/* Backdrop overlay for sidebar drawer */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/60 z-30 md:hidden"
+          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
           onClick={() => setSidebarOpen(false)}
         />
       )}
